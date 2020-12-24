@@ -3,6 +3,9 @@
 </script>
 
 <style>
+  .navbar {
+    z-index: 10;
+  }
 </style>
 
 <nav class="navbar navbar-dark bg-dark">

@@ -5,15 +5,24 @@
   import { DatasetManager } from "./data_manager.js";
   import { Scales } from "./scales";
   import { fade } from "svelte/transition";
+  import { watchResize } from "svelte-watch-resize";
 
   const dispatch = createEventDispatcher();
 
-  export let width = 600;
-  export let height = 600;
+  let container;
+
+  export let width = null;
+  export let height = null;
+  let actualWidth = null;
+  let actualHeight = null;
+  $: if (!!width) actualWidth = width;
+  else if (!!container) actualWidth = container.clientWidth;
+  $: if (!!height) actualHeight = height;
+  else if (!!container) actualHeight = container.clientHeight;
+
   export let useHalos = false;
   export let hoverable = false;
   export let thumbnail = false;
-  export let isSelected = false; // for thumbnails only
 
   export let rFactor = 1.0;
   export let colorScheme = { value: d3.interpolateTurbo };
@@ -111,42 +120,20 @@
 
   var mouseMoveTimeout;
 
-  let canvasBG = "transparent";
-  let isHovering = false;
-  let isClicking = false;
-
-  $: {
-    if (isClicking) {
-      canvasBG = "skyblue";
-    } else if (isHovering) {
-      canvasBG = isSelected ? "deepskyblue" : "skyblue";
-    } else {
-      canvasBG = isSelected ? "deepskyblue" : "transparent";
-    }
+  function onMouseover() {
+    dispatch("mouseover");
   }
 
-  function onMouseover(obj) {
-    if (thumbnail) {
-      isHovering = true;
-      dispatch("mouseover");
-    }
+  function onMousedown() {
+    dispatch("mousedown");
   }
 
-  function onMousedown(obj) {
-    if (thumbnail) {
-      isClicking = true;
-    }
+  function onMouseup() {
+    dispatch("mouseup");
   }
 
-  function onMouseup(obj) {
+  function onMouseout() {
     if (thumbnail) {
-      isClicking = false;
-    }
-  }
-
-  function onMouseout(obj) {
-    if (thumbnail) {
-      isHovering = false;
       dispatch("mouseout");
     } else if (hoveredID != null) {
       hoveredID = null;
@@ -395,14 +382,19 @@
     scales = new Scales(
       data.getXExtent(),
       data.getYExtent(),
-      [canvas.margin.left, width - canvas.margin.right],
-      [canvas.margin.top, height - canvas.margin.bottom],
+      [canvas.margin.left, actualWidth - canvas.margin.right],
+      [canvas.margin.top, actualHeight - canvas.margin.bottom],
       0.5
     );
 
     scales.onUpdate(() => {
       showResetButton = !scales.isNeutral() || clickedID != null;
     });
+  }
+
+  function handleResize(node) {
+    actualWidth = node.clientWidth;
+    actualHeight = node.clientHeight;
   }
 </script>
 
@@ -426,12 +418,15 @@
 
 <svelte:options accessors />
 
-<div style="width: {width}px; height: {height}px;" id="container">
+<div
+  style="width: {width != null ? `${width}px` : '100%'}; height: {height != null ? `${height}px` : '100%'};"
+  id="container"
+  use:watchResize={handleResize}
+  bind:this={container}>
   <D3Canvas
     {thumbnail}
-    backgroundColor={canvasBG}
-    {width}
-    {height}
+    width={actualWidth}
+    height={actualHeight}
     data={marks}
     halosEnabled={useHalos}
     pan={!thumbnail}
@@ -455,8 +450,8 @@
     bind:this={canvas} />
   {#if hoverable}
     <D3Canvas
-      {width}
-      {height}
+      width={actualWidth}
+      height={actualHeight}
       data={marks}
       bind:this={hiddenCanvas}
       {rFactor}

@@ -3,5 +3,16 @@
 import { dummyData } from "./dummy-data/data.js";
 
 export async function getVisualizationData() {
-  return dummyData;
+  return {
+    data: dummyData,
+    frameLabels: [
+      "April",
+      "May",
+      "June",
+      "July",
+      "August",
+      "September",
+      "October",
+    ],
+  };
 }

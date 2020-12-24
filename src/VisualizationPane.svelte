@@ -6,6 +6,7 @@
   import { Dataset } from "./visualization/dataset";
 
   import * as Model from "./datamodel";
+  import ScatterplotThumbnail from "./visualization/ScatterplotThumbnail.svelte";
 
   let colorChannel = "color";
 
@@ -89,14 +90,55 @@
 
 <style>
   .scatterplot {
-    margin-right: 16px;
-    margin-bottom: 16px;
+    height: 100%;
+  }
+
+  .vis-container {
+    width: 100%;
+    height: 100%;
+    display: flex;
+    justify-items: stretch;
+  }
+
+  .thumbnail-item {
+    margin-bottom: 8px;
+  }
+
+  .thumbnail-container {
+    width: 72px;
+    border-right: 1px solid #555;
+    padding: 8px;
+    overflow-y: scroll;
+  }
+
+  .legend-container {
+    flex-grow: 1;
+    height: 100%;
+    overflow-y: scroll;
   }
 </style>
 
-<div>
+<div class="vis-container">
+  {#if data != null}
+    <div class="thumbnail-container">
+      {#each [...d3.range(data.frameCount)] as i}
+        <div class="thumbnail-item">
+          <ScatterplotThumbnail
+            on:click={() => (currentFrame = i)}
+            on:mouseover={() => (previewFrame = i)}
+            on:mouseout={() => (previewFrame = -1)}
+            isSelected={currentFrame == i}
+            {colorScheme}
+            {data}
+            frame={i} />
+        </div>
+      {/each}
+    </div>
+  {/if}
+
   <div class="scatterplot">
     <SynchronizedScatterplot
+      width={600}
       {data}
       hoverable
       {colorScheme}
@@ -109,29 +151,7 @@
       on:datahover={onScatterplotHover}
       on:dataclick={onScatterplotClick} />
   </div>
-
-  {#if data != null}
-    <table>
-      <tr>
-        {#each [...d3.range(data.frameCount)] as i}
-          <td>
-            <SynchronizedScatterplot
-              thumbnail
-              on:click={() => (currentFrame = i)}
-              on:mouseover={() => (previewFrame = i)}
-              on:mouseout={() => (previewFrame = -1)}
-              isSelected={currentFrame == i}
-              {colorScheme}
-              {data}
-              width={60}
-              height={60}
-              frame={i}
-              rFactor="0.1" />
-          </td>
-        {/each}
-      </tr>
-    </table>
-  {/if}
-
-  <Legend {colorScale} type={colorScheme.type || 'continuous'} />
+  <div class="legend-container">
+    <Legend {colorScale} type={colorScheme.type || 'continuous'} />
+  </div>
 </div>

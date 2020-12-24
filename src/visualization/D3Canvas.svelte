@@ -12,7 +12,6 @@
   export let height = 300;
   export let hidden = false;
   export let thumbnail = false;
-  export let backgroundColor = "white";
   export let pan = false;
   export let zoom = false;
   export let rFactor = 1.0;
@@ -24,18 +23,13 @@
     // Makes sure to scale the canvas when the width/height change
     if (!!canvas) {
       scaleCanvas(canvas, width, height);
+      draw();
     }
   }
 
   $: {
     // Draws the canvas when the data is explicitly updated
     if (!!data) {
-      draw();
-    }
-  }
-
-  $: {
-    if (!!backgroundColor) {
       draw();
     }
   }
@@ -87,8 +81,8 @@
 
   // Draws a line with width startWidth at (x, y) and width endWidth at (x2, y2)
   function drawWideningLine(context, x, y, x2, y2, startWidth, endWidth) {
-    let start = [x, height - y];
-    let end = [x2, height - y2];
+    let start = [x, y];
+    let end = [x2, y2];
     let path = [end[0] - start[0], end[1] - start[1]];
     let normal;
     if (path[1] > 0.0) normal = normalizeVector([path[1], -path[0]]);
@@ -179,7 +173,7 @@
 
           if (showDelta) {
             context.globalAlpha = 0.1;
-            context.translate(x, height - y);
+            context.translate(x, y);
             let haloAngle = Math.atan2(x2 - x, y - y2);
             context.rotate(-haloAngle);
             context.beginPath();
@@ -190,10 +184,10 @@
             drawOblongHalo(context, halo, extent);
             context.fill();
             context.rotate(haloAngle);
-            context.translate(-x, -(height - y));
+            context.translate(-x, -y);
           } else if (halo > 1.0) {
             context.beginPath();
-            context.ellipse(x, height - y, halo, halo, 0, 0, 2 * Math.PI);
+            context.ellipse(x, y, halo, halo, 0, 0, 2 * Math.PI);
             context.fill();
           }
         } else if (!thumbnail && showDelta) {
@@ -201,8 +195,8 @@
           if (lineAlpha >= 0.001) {
             context.globalAlpha = lineAlpha || 0.1;
             context.beginPath();
-            /*context.moveTo(x, height - y);
-            context.lineTo(x2, height - y2);
+            /*context.moveTo(x, y);
+            context.lineTo(x2, y2);
             context.lineCap = "round";
             context.lineWidth = d.attr("lineWidth") || 2.0;*/
             let lineWidth = d.attr("lineWidth") * 0.3 || 2.0;
@@ -222,14 +216,14 @@
         // Squares on integer pixel values work better to avoid color blending
         context.rect(
           Math.round(x - hiddenDim / 2.0),
-          Math.round(height - (y - hiddenDim / 2.0)),
+          Math.round(y - hiddenDim / 2.0),
           Math.round(hiddenDim),
-          -Math.round(hiddenDim)
+          Math.round(hiddenDim)
         );
         context.fillStyle = fillStyle;
         context.fill();
       } else {
-        context.ellipse(x, height - y, r, r, 0, 0, 2 * Math.PI);
+        context.ellipse(x, y, r, r, 0, 0, 2 * Math.PI);
         context.globalAlpha *= 0.5;
         context.fillStyle = fillStyle;
         context.fill();
@@ -253,7 +247,7 @@
           let r = d.attr("r");
 
           context.beginPath();
-          context.ellipse(x, height - y, r, r, 0, 0, 2 * Math.PI);
+          context.ellipse(x, y, r, r, 0, 0, 2 * Math.PI);
           context.strokeStyle = d.attr("color");
           context.lineWidth = d.attr("lineWidth");
           context.stroke();
@@ -262,8 +256,8 @@
           let y2 = d.attr("y2");
 
           context.beginPath();
-          context.moveTo(x, height - y);
-          context.lineTo(x2, height - y2);
+          context.moveTo(x, y);
+          context.lineTo(x2, y2);
           context.strokeStyle = d.attr("color");
           context.lineWidth = d.attr("lineWidth");
           context.lineCap = "round";
@@ -285,7 +279,7 @@
           let padding = 3;
           context.fillRect(
             x - textWidth / 2 - padding,
-            height - (y + 10 + fontSize + padding),
+            y - (10 + fontSize + padding),
             textWidth + padding * 2,
             fontSize + padding * 2
           );
@@ -293,7 +287,7 @@
           context.font = `${fontSize}pt Arial`;
           context.textAlign = "center";
           context.fillStyle = "black";
-          context.fillText(hoverText, x, height - (y + 10));
+          context.fillText(hoverText, x, y - 10);
         }
       });
     }
@@ -346,7 +340,7 @@
 
       dispatch("translate", {
         x: -dx,
-        y: dy,
+        y: -dy,
       });
     }
     lastX = mouseX;
@@ -367,7 +361,7 @@
     var mouseX = event.clientX - rect.left; //x position within the element.
     var mouseY = event.clientY - rect.top; //y position within the element.
 
-    dispatch("scale", { ds: ds, centerPoint: [mouseX, height - mouseY] });
+    dispatch("scale", { ds: ds, centerPoint: [mouseX, mouseY] });
 
     event.preventDefault();
   }
@@ -433,20 +427,5 @@
   });
 </script>
 
-<style>
-  .thumbnail {
-    border: 1px solid darkgray;
-    border-radius: 8px;
-  }
-  .bigcanvas {
-    border: 1px solid darkgray;
-    border-radius: 8px;
-  }
-</style>
-
 <svelte:options accessors />
-<div
-  bind:this={container}
-  class:thumbnail
-  class:bigcanvas={!thumbnail && !hidden}
-  style="background-color: {backgroundColor}" />
+<div bind:this={container} />

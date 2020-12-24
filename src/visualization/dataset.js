@@ -11,9 +11,11 @@ export function Dataset(rawData, colorKey, r = 4.0) {
     // There are other keys
     this.frames = rawData.data;
     this.previews = rawData.previews;
+    this.frameLabels = rawData.frameLabels;
   } else {
     // Old format
     this.frames = rawData;
+    this.frameLabels = this.frames.map((f, i) => "Frame " + (i + 1));
   }
 
   this.getXExtent = function () {
