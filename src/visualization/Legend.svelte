@@ -6,12 +6,8 @@
 
   export let width = null;
   export let height = null;
-  let actualWidth;
-  let actualHeight;
-  $: if (!!width) actualWidth = width;
-  else if (!!container) actualWidth = container.clientWidth;
-  $: if (!!height) actualHeight = height;
-  else if (!!container) actualHeight = container.clientHeight;
+  let actualWidth = 100;
+  let actualHeight = 100;
 
   export let colorScale = null;
   export let numCells = 10; // for continuous
@@ -34,12 +30,16 @@
     svg = d3
       .select(container)
       .append("svg")
-      .style("width", actualWidth)
-      .style("height", actualHeight)
-      .style("font-family", "sans-serif");
+      .style("font-family", "sans-serif")
+      .style("font-size", "10pt");
 
     if (type == "categorical") {
-      //let domainLabels = colorScale.domain();
+      let domainLabels = colorScale.domain();
+      actualWidth = 240;
+      actualHeight =
+        15 * domainLabels.length + 5 * (domainLabels.length + 1) + 20;
+      svg.style("width", actualWidth).style("height", actualHeight);
+
       svg
         .append("g")
         .attr("class", "legendOrdinal")
@@ -48,14 +48,18 @@
       let legendOrdinal = d3legend
         .legendColor()
         .shape("circle")
-        .shapePadding(10)
-        .shapeRadius(10)
+        .shapePadding(5)
+        .shapeRadius(5)
         .orient("vertical")
         .scale(colorScale);
 
       svg.select(".legendOrdinal").call(legendOrdinal);
     } else if (type == "continuous") {
       let totalWidth = 30 * numCells + 1 * (numCells - 1);
+      actualWidth = totalWidth;
+      actualHeight = 45;
+      svg.style("width", actualWidth).style("height", actualHeight);
+
       svg
         .append("g")
         .attr("class", "legendLinear")
@@ -76,12 +80,6 @@
     }
   }
 
-  function handleResize(node) {
-    actualWidth = node.clientWidth;
-    actualHeight = node.clientHeight;
-    update();
-  }
-
   onMount(() => {
     console.log("updating mount");
     update();
@@ -90,5 +88,4 @@
 
 <div
   bind:this={container}
-  style="width: {width != null ? `${width}px` : '100%'}; height: {height != null ? `${height}px` : '100%'};"
-  use:watchResize={handleResize} />
+  style="width: {width != null ? width : actualWidth}px; height: {height != null ? height : actualHeight}px;" />

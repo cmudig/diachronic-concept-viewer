@@ -110,6 +110,8 @@
         }
       });
     }
+
+    window.addEventListener("resize", handleResize);
   });
 
   // Temporary initial value
@@ -392,9 +394,10 @@
     });
   }
 
-  function handleResize(node) {
-    actualWidth = node.clientWidth;
-    actualHeight = node.clientHeight;
+  function handleResize() {
+    console.log("resizing");
+    actualWidth = container.clientWidth;
+    actualHeight = container.clientHeight;
   }
 </script>
 
@@ -409,7 +412,7 @@
   }
   #message-panel {
     position: absolute;
-    bottom: 0;
+    bottom: 8px;
     left: 8px;
     font-size: small;
     color: #555;
@@ -421,7 +424,6 @@
 <div
   style="width: {width != null ? `${width}px` : '100%'}; height: {height != null ? `${height}px` : '100%'};"
   id="container"
-  use:watchResize={handleResize}
   bind:this={container}>
   <D3Canvas
     {thumbnail}
