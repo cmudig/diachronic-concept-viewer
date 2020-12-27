@@ -407,13 +407,13 @@
   }
   #button-panel {
     position: absolute;
-    right: 8px;
-    top: 8px;
+    right: 12px;
+    top: 12px;
   }
   #message-panel {
     position: absolute;
-    bottom: 8px;
-    left: 8px;
+    bottom: 12px;
+    left: 12px;
     font-size: small;
     color: #555;
   }

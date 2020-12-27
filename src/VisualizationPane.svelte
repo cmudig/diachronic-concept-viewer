@@ -1,5 +1,5 @@
 <script>
-  import { onMount } from "svelte";
+  import { createEventDispatcher } from "svelte";
   import * as d3 from "d3";
   import SynchronizedScatterplot from "./visualization/SynchronizedScatterplot.svelte";
   import Legend from "./visualization/Legend.svelte";
@@ -8,6 +8,8 @@
 
   import * as Model from "./datamodel";
   import ScatterplotThumbnail from "./visualization/ScatterplotThumbnail.svelte";
+
+  const dispatch = createEventDispatcher();
 
   let colorChannel = "color";
 
@@ -21,7 +23,7 @@
 
   let useHalos = false;
 
-  let thumbnailID = null;
+  export let thumbnailID = null;
   let previewThumbnailID = null;
 
   var data = null;
@@ -50,6 +52,7 @@
 
   function updateThumbnailID(id) {
     thumbnailID = id;
+    dispatch("select", thumbnailID);
   }
 
   function updatePreviewThumbnailID() {
@@ -66,7 +69,7 @@
   }
 
   function onScatterplotHover(e) {
-    updateThumbnailID(e.detail != null ? e.detail : canvas.clickedID || null);
+    // updateThumbnailID(e.detail != null ? e.detail : canvas.clickedID || null);
   }
 
   function onScatterplotClick(e) {
@@ -125,21 +128,21 @@
 
   .thumbnail-container {
     flex-shrink: 0;
-    border-right: 1px solid #555;
+    border-right: 1px solid #bbb;
     overflow-y: scroll;
     padding: 12px;
   }
 
   .legend-hoverable {
     position: absolute;
-    bottom: 8px;
-    right: 8px;
+    bottom: 12px;
+    right: 12px;
     margin-bottom: 0 !important;
   }
   .legend-container {
     position: absolute;
-    bottom: 8px;
-    right: 8px;
+    bottom: 12px;
+    right: 12px;
     border-radius: 4px;
     background-color: rgba(225, 225, 225, 0.8);
   }
