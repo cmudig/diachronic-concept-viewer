@@ -23,11 +23,12 @@
 
   let useHalos = false;
 
+  let oldThumbnailID = null;
   export let thumbnailID = null;
   let previewThumbnailID = null;
 
   var data = null;
-  let currentFrame = 0;
+  export let currentFrame = 0;
   let previewFrame = -1;
 
   let canvas;
@@ -79,6 +80,7 @@
   let oldFrame = 0;
   $: if (oldFrame != currentFrame) {
     updateThumbnailID(thumbnailID);
+    dispatch("changeframe", currentFrame);
     oldFrame = currentFrame;
   }
 
@@ -87,6 +89,11 @@
   $: if (oldPreviewFrame != previewFrame) {
     updatePreviewThumbnailID();
     oldPreviewFrame = previewFrame;
+  }
+
+  $: if (oldThumbnailID != thumbnailID) {
+    selectPoint(thumbnailID);
+    thumbnailID = oldThumbnailID;
   }
 
   export function selectPoint(pointID) {

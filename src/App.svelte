@@ -3,6 +3,7 @@
   import VisualizationPane from "./VisualizationPane.svelte";
 
   let selectedID = null;
+  let selectedFrame = -1;
 </script>
 
 <style>
@@ -19,6 +20,7 @@
   .info-pane {
     border-left: 1px solid #bbb;
     padding-left: 12px;
+    overflow-y: scroll;
   }
 </style>
 
@@ -30,10 +32,15 @@
     <div class="full-height col-md-8">
       <VisualizationPane
         thumbnailID={selectedID}
-        on:select={(e) => (selectedID = e.detail)} />
+        currentFrame={selectedFrame}
+        on:select={(e) => (selectedID = e.detail)}
+        on:changeframe={(e) => (selectedFrame = e.detail)} />
     </div>
-    <div class="col-md-4 info-pane">
-      <EntityInfoPane entityID={selectedID} />
+    <div class="col-md-4 info-pane full-height">
+      <EntityInfoPane
+        entityID={selectedID}
+        frame={selectedFrame}
+        on:select={(e) => (selectedID = e.detail)} />
     </div>
   </div>
 </main>
