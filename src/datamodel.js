@@ -120,3 +120,18 @@ export async function getEntityInfo(entityID, options = {}) {
     frameDescriptions,
   };
 }
+
+/**
+ * Retrieve the list of entities.
+ *
+ * @return A list of objects, where each object contains the following fields:
+ *  - id: The CUI for the entity
+ *  - name: The name of the entity
+ */
+export async function getAllEntities() {
+  // TODO use API
+  return Object.keys(thumbnailInfo).map((id) => ({
+    id,
+    name: thumbnailInfo[id].name,
+  }));
+}

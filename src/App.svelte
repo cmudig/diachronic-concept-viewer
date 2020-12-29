@@ -1,14 +1,27 @@
 <script>
+  import Autocomplete from "./Autocomplete.svelte";
   import EntityInfoPane from "./EntityInfoPane.svelte";
   import VisualizationPane from "./VisualizationPane.svelte";
+  import * as DataModel from "./datamodel";
 
   let selectedID = null;
   let selectedFrame = -1;
+
+  let searchItems;
+  $: DataModel.getAllEntities().then(
+    (result) =>
+      (searchItems = result.map((item) => ({
+        text: item.name,
+        value: item.id,
+      })))
+  );
 </script>
 
 <style>
   .navbar {
     z-index: 10;
+    display: flex;
+    justify-content: space-between;
   }
 
   .full-height {
@@ -26,6 +39,12 @@
 
 <nav class="navbar navbar-dark bg-dark">
   <a href="#" class="navbar-brand">COVID Diachronic Concept Embeddings</a>
+  <div>
+    <Autocomplete
+      options={searchItems}
+      right
+      on:change={(e) => (selectedID = e.detail)} />
+  </div>
 </nav>
 <main>
   <div class="row full-height">

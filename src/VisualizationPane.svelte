@@ -93,7 +93,7 @@
 
   $: if (oldThumbnailID != thumbnailID) {
     selectPoint(thumbnailID);
-    thumbnailID = oldThumbnailID;
+    oldThumbnailID = thumbnailID;
   }
 
   export function selectPoint(pointID) {

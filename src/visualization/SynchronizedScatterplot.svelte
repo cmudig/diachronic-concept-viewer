@@ -5,7 +5,8 @@
   import { DatasetManager } from "./data_manager.js";
   import { Scales } from "./scales";
   import { fade } from "svelte/transition";
-  import { watchResize } from "svelte-watch-resize";
+  import Icon from "fa-svelte";
+  import { faExclamationTriangle } from "@fortawesome/free-solid-svg-icons/faExclamationTriangle";
 
   const dispatch = createEventDispatcher();
 
@@ -47,6 +48,28 @@
   let timer;
   let currentTime = 0;
 
+  let warningMessage = "";
+  $: {
+    if (!data) warningMessage = "";
+    else if (
+      !!clickedID &&
+      previewFrame >= 0 &&
+      previewFrame != frame &&
+      !data.atFrame(clickedID, previewFrame)
+    ) {
+      warningMessage =
+        "The selected entity is not present in the destination frame";
+    } else if (
+      !!clickedID &&
+      (previewFrame < 0 || previewFrame == frame) &&
+      !data.atFrame(clickedID, frame)
+    ) {
+      warningMessage = "The selected entity is not present in this plot";
+    } else {
+      warningMessage = "";
+    }
+  }
+
   // Animate point positions on different frames
   $: {
     if (!!dataManager) {
@@ -67,8 +90,9 @@
     }
     if (!!clickedID && !data.atFrame(clickedID, newFrame)) {
       hideStarGraph(clickedID);
-      selectPoint(null);
-      scales.resetZoom();
+      if (isCenteredOnPoint) {
+        showVicinityOfClickedPoint();
+      }
     } else if (!!clickedID) {
       updateStarGraph(clickedID);
     }
@@ -194,6 +218,8 @@
       } else {
         hideStarGraph(id);
       }
+    } else {
+      showStarGraph(id);
     }
   }
 
@@ -404,6 +430,7 @@
 <style>
   #container {
     position: relative;
+    overflow: hidden;
   }
   #button-panel {
     position: absolute;
@@ -416,6 +443,16 @@
     left: 12px;
     font-size: small;
     color: #555;
+  }
+  #warning-panel {
+    position: absolute;
+    top: 12px;
+    left: 12px;
+    border-radius: 4px;
+    padding: 6px;
+    background-color: goldenrod;
+    color: white;
+    font-size: small;
   }
 </style>
 
@@ -464,6 +501,7 @@
       {#if showCenterButton}
         <button
           transition:fade={{ duration: 100 }}
+          disabled={!data.atFrame(clickedID, frame)}
           type="button"
           class="btn btn-primary btn-sm"
           on:click|preventDefault={!isCenteredOnPoint ? centerOnClickedPoint : showVicinityOfClickedPoint}>
@@ -482,5 +520,11 @@
         {@html centeredText}
       {/if}
     </div>
+    {#if warningMessage.length > 0}
+      <div id="warning-panel" transition:fade={{ duration: 100 }}>
+        <Icon icon={faExclamationTriangle} />
+        {warningMessage}
+      </div>
+    {/if}
   {/if}
 </div>

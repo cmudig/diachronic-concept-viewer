@@ -12,8 +12,8 @@ import * as d3 from "d3";
 
 const animationDuration = 4000;
 const previewAnimDuration = 1000;
-const dimmedAlpha = 0.3;
-const dimmedRFactor = 0.5;
+const dimmedAlpha = 0.5;
+const dimmedRFactor = 0.7;
 
 // Defines the visual decoration appearance of a star graph
 function DecorationStarGraph(centerMark, neighborMarks) {
