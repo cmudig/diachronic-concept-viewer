@@ -3,6 +3,9 @@
   import EntityInfoPane from "./EntityInfoPane.svelte";
   import VisualizationPane from "./VisualizationPane.svelte";
   import * as DataModel from "./datamodel";
+  import { fade } from "svelte/transition";
+  import ComparisonView from "./ComparisonView.svelte";
+  import Modal from "./Modal.svelte";
 
   let selectedID = null;
   let selectedFrame = -1;
@@ -15,6 +18,8 @@
         value: item.id,
       })))
   );
+
+  let showingComparisonView = false;
 </script>
 
 <style>
@@ -39,7 +44,11 @@
 
 <nav class="navbar navbar-dark bg-dark">
   <a href="#" class="navbar-brand">COVID Diachronic Concept Embeddings</a>
-  <div>
+  <div style="display: flex;">
+    <button
+      disabled={!selectedID}
+      class="btn btn-dark mb-0 mr-2"
+      on:click={(e) => (showingComparisonView = true)}>Compare</button>
     <Autocomplete
       options={searchItems}
       right
@@ -62,4 +71,11 @@
         on:select={(e) => (selectedID = e.detail)} />
     </div>
   </div>
+  <Modal
+    visible={showingComparisonView}
+    maxWidth={400}
+    title="Comparison"
+    on:dismiss={(e) => (showingComparisonView = false)}>
+    <ComparisonView firstItem={{ name: 'hello world' }} />
+  </Modal>
 </main>
