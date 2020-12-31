@@ -5,8 +5,10 @@
   const dispatch = createEventDispatcher();
 
   export let visible = false;
-  export let maxWidth = 300;
+  export let width = null;
   export let title = "Modal";
+  export let fullWidth = false;
+  export let fullHeight = false;
 </script>
 
 <style>
@@ -27,11 +29,20 @@
     border-radius: 4px;
     background-color: white;
     max-height: calc(100% - 80px);
+    max-width: calc(100% - 80px);
     overflow: auto;
   }
 
   .my-modal-container {
     height: 100%;
+  }
+
+  .full-width-modal {
+    width: calc(100% - 80px);
+  }
+
+  .full-height-modal {
+    height: calc(100% - 80px);
   }
 </style>
 
@@ -42,7 +53,9 @@
     on:click={(e) => dispatch('dismiss')}>
     <div
       class="my-modal-background"
-      style="max-width: {maxWidth}px;"
+      class:full-width-modal={fullWidth}
+      class:full-height-modal={fullHeight}
+      style={!!width ? `width: ${width}px;` : ''}
       on:click|stopPropagation={(e) => false}
       transition:fade={{ duration: 200 }}>
       <div class="my-modal-container">

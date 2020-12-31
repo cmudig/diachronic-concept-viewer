@@ -19,7 +19,20 @@
       })))
   );
 
+  let selectedName = "";
+  $: if (!!searchItems && !!selectedID) {
+    selectedName = searchItems.find((elem) => elem.value == selectedID).text;
+  } else {
+    selectedName = "";
+  }
+
   let showingComparisonView = false;
+  let comparisonItem = null;
+
+  function compareWithID(compareID) {
+    comparisonItem = compareID;
+    showingComparisonView = true;
+  }
 </script>
 
 <style>
@@ -68,14 +81,18 @@
       <EntityInfoPane
         entityID={selectedID}
         frame={selectedFrame}
-        on:select={(e) => (selectedID = e.detail)} />
+        on:select={(e) => (selectedID = e.detail)}
+        on:compare={(e) => compareWithID(e.detail)} />
     </div>
   </div>
   <Modal
     visible={showingComparisonView}
-    maxWidth={400}
-    title="Comparison"
+    width={800}
+    title={`Compare with "${selectedName}"`}
     on:dismiss={(e) => (showingComparisonView = false)}>
-    <ComparisonView firstItem={{ name: 'hello world' }} />
+    <ComparisonView
+      firstID={selectedID}
+      comparisonIDs={[comparisonItem]}
+      options={searchItems} />
   </Modal>
 </main>

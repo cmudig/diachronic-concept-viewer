@@ -15,9 +15,10 @@
   $: {
     if (!entityID) title = "No concept selected";
     else {
-      title = entityID;
       if (!!info) {
-        title += `: ${info.name}`;
+        title = info.name;
+      } else {
+        title = entityID;
       }
     }
   }
@@ -46,6 +47,8 @@
   function selectEntity(newID) {
     dispatch("select", newID);
   }
+
+  let hoveringNeighborID = null;
 </script>
 
 <style>
@@ -90,6 +93,18 @@
   td {
     cursor: pointer;
   }
+
+  .neighbor-container {
+    display: flex;
+    justify-content: space-between;
+    min-height: 22px;
+    align-items: center;
+  }
+
+  .compare-button {
+    font-size: small;
+    padding: 0;
+  }
 </style>
 
 <div class="info-pane-container">
@@ -101,7 +116,9 @@
     </div>
   {:else}
     <div class="selection-info-container">
-      <h4>{title}</h4>
+      <h4>
+        {@html title}
+      </h4>
       {@html description}
       {#if !!info && !!info.neighbors[frame]}
         <table class="table">
@@ -111,9 +128,18 @@
           <tbody>
             {#each info.neighbors[frame] as neighbor}
               <tr>
-                <td on:click={() => selectEntity(neighbor.id)}>
-                  {neighbor.id}
-                  <strong>{neighbor.name}</strong>
+                <td
+                  on:click={() => selectEntity(neighbor.id)}
+                  on:mouseover={(e) => (hoveringNeighborID = neighbor.id)}
+                  on:mouseleave={(e) => (hoveringNeighborID = null)}>
+                  <div class="neighbor-container">
+                    <div>{neighbor.id} <strong>{neighbor.name}</strong></div>
+                    {#if hoveringNeighborID == neighbor.id}
+                      <button
+                        class="compare-button btn btn-link my-0 mx-2"
+                        on:click|stopPropagation={(e) => dispatch('compare', neighbor.id)}>Compare</button>
+                    {/if}
+                  </div>
                 </td>
               </tr>
             {/each}
