@@ -9,6 +9,7 @@
 
   let selectedID = null;
   let selectedFrame = -1;
+  let previewFrame = -1;
 
   let searchItems;
   $: DataModel.getAllEntities().then(
@@ -74,6 +75,7 @@
       <VisualizationPane
         thumbnailID={selectedID}
         currentFrame={selectedFrame}
+        bind:previewFrame
         on:select={(e) => (selectedID = e.detail)}
         on:changeframe={(e) => (selectedFrame = e.detail)} />
     </div>
@@ -81,6 +83,7 @@
       <EntityInfoPane
         entityID={selectedID}
         frame={selectedFrame}
+        {previewFrame}
         on:select={(e) => (selectedID = e.detail)}
         on:compare={(e) => compareWithID(e.detail)} />
     </div>
