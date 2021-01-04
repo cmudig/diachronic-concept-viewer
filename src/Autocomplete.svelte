@@ -17,6 +17,23 @@
 
   export let right = false;
 
+  export let selectedValue = null;
+
+  export let completeOnSelect = false;
+
+  export let disabled = false;
+
+  let oldSelectedValue = null;
+  $: if (
+    completeOnSelect &&
+    !!selectedValue &&
+    selectedValue != oldSelectedValue
+  ) {
+    let selectedItem = options.find((val) => val.value == selectedValue);
+    autocompleteText = `${selectedItem.value}: ${selectedItem.text}`;
+    oldSelectedValue = selectedValue;
+  }
+
   let visibleOptions = [];
 
   $: {
@@ -33,6 +50,7 @@
   }
 
   function onPointSelectorItemClick(itemID) {
+    selectedValue = itemID;
     dispatch("change", itemID);
   }
 
@@ -59,16 +77,28 @@
   .autocomplete-container {
     position: relative;
   }
+
+  input[type="search"]:disabled::-webkit-search-cancel-button {
+    -webkit-appearance: none;
+  }
+
+  input[type="search"] {
+    -webkit-appearance: none;
+  }
+
+  input:disabled {
+    color: #555;
+  }
 </style>
 
 <div class="autocomplete-container">
   <input
-    type="text"
+    type="search"
     class="form-control mb-0"
     {placeholder}
+    {disabled}
     bind:this={autocomplete}
     bind:value={autocompleteText}
-    data-toggle="dropdown"
     on:focus={() => (autocompleteDropdownVisible = true)}
     on:blur={() => {
       setTimeout(() => (autocompleteDropdownVisible = false), 100);
@@ -77,7 +107,7 @@
     class="dropdown-menu"
     class:dropdown-menu-right={right}
     bind:this={autocompleteDropdown}
-    style="visibility: {autocompleteDropdownVisible && visibleOptions.length > 0 ? 'visible' : 'hidden'}"
+    style={autocompleteDropdownVisible && visibleOptions.length > 0 ? 'visibility: visible; display: block;' : 'visibility: hidden; display: none;'}
     role="menu">
     {#each visibleOptions as option}
       <div

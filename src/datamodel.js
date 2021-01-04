@@ -135,3 +135,34 @@ export async function getAllEntities() {
     name: thumbnailInfo[id].name,
   }));
 }
+
+/**
+ * Get the pairwise similarity over time for the given pair of entity IDs.
+ *
+ * @param firstID the CUI of the first concept
+ * @param secondID the CUI of the second concept
+ *
+ * @return A list of objects where each object specifies a similarity at a given
+ *  month. The objects should contain the following keys:
+ *  - "date": A date string
+ *  - "mean_similarity": A floating point value indicating the similarity
+ *  - "std_similarity": A floating point value for the standard deviation of
+ *    similarity at this point
+ */
+export async function getPairwiseSimilarity(firstID, secondID) {
+  // TODO use API
+  const months = [
+    "Apr 1 2020",
+    "May 1 2020",
+    "Jun 1 2020",
+    "Jul 1 2020",
+    "Aug 1 2020",
+    "Sep 1 2020",
+    "Oct 1 2020",
+  ];
+  return months.map((m) => ({
+    date: m,
+    mean_similarity: Math.random(),
+    std_similarity: Math.random() * 0.4,
+  }));
+}

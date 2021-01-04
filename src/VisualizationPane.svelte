@@ -29,7 +29,7 @@
 
   var data = null;
   export let currentFrame = 0;
-  let previewFrame = -1;
+  export let previewFrame = -1;
 
   let canvas;
 
