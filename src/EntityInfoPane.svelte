@@ -101,12 +101,14 @@
     </div>
   {:else}
     <div class="selection-info-container">
-      <h4>{title}</h4>
+      <h4>
+        <a href="/info/{entityID}">{title}</a>
+      </h4>
       {@html description}
       {#if !!info && !!info.neighbors[frame]}
         <table class="table">
           <thead>
-            <th>Neighbors</th>
+            <th colspan="2">Neighbors</th>
           </thead>
           <tbody>
             {#each info.neighbors[frame] as neighbor}
@@ -114,6 +116,9 @@
                 <td on:click={() => selectEntity(neighbor.id)}>
                   {neighbor.id}
                   <strong>{neighbor.name}</strong>
+                </td>
+                <td>
+                    <a href="/info/{neighbor.id}">Detail view</a>
                 </td>
               </tr>
             {/each}

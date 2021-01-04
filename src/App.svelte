@@ -38,13 +38,22 @@
 </style>
 
 <nav class="navbar navbar-dark bg-dark">
-  <a href="#" class="navbar-brand">COVID Diachronic Concept Embeddings</a>
-  <div>
-    <Autocomplete
-      options={searchItems}
-      right
-      on:change={(e) => (selectedID = e.detail)} />
-  </div>
+    <div id="navbar-logo" class="navbar-element">
+        <img src="/static/images/text-essence-logo-white.svg" />
+    </div>
+    <div id="navbar-header" class="navbar-element navbar-brand">
+        COVID Diachronic Concept Embeddings
+        <a href="/">
+            <img src="/static/images/home.svg" />
+            <span class="sr-only">Home</span>
+        </a>
+    </div>
+    <div id="search_panel" class="container">
+        <Autocomplete
+          options={searchItems}
+          right
+          on:change={(e) => (selectedID = e.detail)} />
+    </div>
 </nav>
 <main>
   <div class="row full-height">
