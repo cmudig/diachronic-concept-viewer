@@ -184,9 +184,8 @@
             {#if neighborInfo.length > 0 && neighborInfo[0].length > 1}
               <th>Current</th>
               <th>Destination</th>
-              <th></th>
             {:else}
-              <th colspan="2">Neighbors</th>
+              <th>Neighbors</th>
             {/if}
           </thead>
           <tbody>
@@ -212,6 +211,12 @@
                       {/if}
                     </div>
                   </td>
+                  {#if !!neighborSet[1]}
+                  {:else}
+                  <td>
+                      <a href="/info/{neighborSet[0].id}">Detail view</a>
+                  </td>
+                  {/if}
                 {:else}
                   <td>&mdash;</td>
                 {/if}
@@ -223,9 +228,6 @@
                     </div>
                   </td>
                 {/if}
-                <td>
-                    <a href="/info/{neighbor.id}">Detail view</a>
-                </td>
               </tr>
             {/each}
           </tbody>
