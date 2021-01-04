@@ -20,19 +20,58 @@
       })))
   );
 
-  let selectedName = "";
-  $: if (!!searchItems && !!selectedID) {
-    selectedName = searchItems.find((elem) => elem.value == selectedID).text;
-  } else {
-    selectedName = "";
+  function getItemForID(id) {
+    return searchItems.find((elem) => elem.value == id);
   }
 
-  let showingComparisonView = false;
-  let comparisonItem = null;
+  function getNameForID(id) {
+    return getItemForID(id).text;
+  }
 
-  function compareWithID(compareID) {
-    comparisonItem = compareID;
+  let comparisonView;
+  let comparisonHistory = [];
+  let showingComparisonView = false;
+  let comparisonIDs = [null];
+  let firstComparisonID = null;
+
+  let firstComparisonName = "";
+  $: if (!!searchItems && !!firstComparisonID) {
+    firstComparisonName = getNameForID(firstComparisonID);
+  } else {
+    firstComparisonName = "";
+  }
+
+  function startComparison(firstID, secondIDs) {
+    firstComparisonID = firstID;
+    comparisonIDs = secondIDs;
     showingComparisonView = true;
+  }
+
+  function dismissComparisonView() {
+    if (comparisonView.validIDs.length > 0) {
+      let newElement = {
+        firstItem: getItemForID(comparisonView.firstID),
+        comparisonItems: comparisonView.validIDs.map((id) => getItemForID(id)),
+      };
+
+      let index = comparisonHistory.findIndex((el) => {
+        if (el.firstItem.value != newElement.firstItem.value) return false;
+        if (el.comparisonItems.length != newElement.comparisonItems.length)
+          return false;
+        return (
+          el.comparisonItems.filter(
+            (item, i) => newElement.comparisonItems[i].value != item.value
+          ).length == 0
+        );
+      });
+      if (index >= 0) comparisonHistory.splice(index, 1);
+
+      comparisonHistory = [newElement, ...comparisonHistory];
+      if (comparisonHistory.length > 10) {
+        comparisonHistory = comparisonHistory.slice(0, 10);
+      }
+    }
+    showingComparisonView = false;
   }
 </script>
 
@@ -54,15 +93,45 @@
     padding-left: 12px;
     overflow-y: scroll;
   }
+
+  .dropdown-container {
+    position: relative;
+  }
+  .dropdown-item:hover {
+    background-color: #eee;
+    cursor: pointer;
+  }
 </style>
 
 <nav class="navbar navbar-dark bg-dark">
   <a href="#" class="navbar-brand">COVID Diachronic Concept Embeddings</a>
   <div style="display: flex;">
-    <button
-      disabled={!selectedID}
-      class="btn btn-dark mb-0 mr-2"
-      on:click={(e) => (showingComparisonView = true)}>Compare</button>
+    <div class="dropdown-container">
+      <button
+        type="button"
+        disabled={!selectedID}
+        class="btn btn-dark mb-0"
+        on:click={(e) => startComparison(selectedID, [null])}>Compare</button>
+      <button
+        type="button"
+        class="btn btn-dark dropdown-toggle dropdown-toggle-split mr-2 mb-0"
+        data-toggle="dropdown"
+        aria-haspopup="true"
+        aria-expanded="false">
+        <span class="sr-only">Toggle Dropdown</span>
+      </button>
+      <div class="dropdown-menu" role="menu">
+        {#each comparisonHistory as c}
+          <div
+            class="dropdown-item"
+            on:click={(e) => startComparison( c.firstItem.value, c.comparisonItems.map((item) => item.value) )}>
+            {c.firstItem.text},
+            {c.comparisonItems.map((item) => item.text).join(', ')}
+          </div>
+        {/each}
+      </div>
+    </div>
+
     <Autocomplete
       options={searchItems}
       right
@@ -85,17 +154,18 @@
         frame={selectedFrame}
         {previewFrame}
         on:select={(e) => (selectedID = e.detail)}
-        on:compare={(e) => compareWithID(e.detail)} />
+        on:compare={(e) => startComparison(selectedID, [e.detail])} />
     </div>
   </div>
   <Modal
     visible={showingComparisonView}
     width={800}
-    title={`Compare with "${selectedName}"`}
-    on:dismiss={(e) => (showingComparisonView = false)}>
+    title={`Compare with "${firstComparisonName}"`}
+    on:dismiss={dismissComparisonView}>
     <ComparisonView
-      firstID={selectedID}
-      comparisonIDs={[comparisonItem]}
+      bind:this={comparisonView}
+      firstID={firstComparisonID}
+      {comparisonIDs}
       options={searchItems} />
   </Modal>
 </main>

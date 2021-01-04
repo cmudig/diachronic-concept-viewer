@@ -7,7 +7,7 @@
   export let comparisonIDs = [null];
   export let options = [];
 
-  let validIDs;
+  export let validIDs;
   $: validIDs = comparisonIDs.filter((id) => !!id);
 
   let chartContainer;
@@ -126,6 +126,7 @@
   }
 </style>
 
+<svelte:options accessors />
 <div class="row px-0 comparison-container">
   <div class="col-md-5">
     <div class="mb-2">
