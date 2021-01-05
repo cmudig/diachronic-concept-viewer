@@ -122,6 +122,11 @@
     width: 100%;
   }
 
+  .selection-header {
+    display: flex;
+    align-items: flex-start;
+  }
+
   .selection-info-container {
     padding: 12px;
     width: 100%;
@@ -174,9 +179,15 @@
     </div>
   {:else}
     <div class="selection-info-container">
-      <h4>
-        <a href="/info/{entityID}">{@html title}</a>
-      </h4>
+      <div class="selection-header">
+        <h4 style="flex-grow: 1;">
+          <a href="/info/{entityID}">{@html title}</a>
+        </h4>
+        <button class="btn btn-dark btn-sm mr-1">Details</button>
+        <button
+          class="btn btn-dark btn-sm"
+          on:click={() => dispatch('compare')}>Compare...</button>
+      </div>
       {@html description}
       {#if !!info && !!info.neighbors[frame]}
         <table class="table">
@@ -212,10 +223,9 @@
                     </div>
                   </td>
                   {#if !!neighborSet[1]}
+
                   {:else}
-                  <td>
-                      <a href="/info/{neighborSet[0].id}">Detail view</a>
-                  </td>
+                    <td><a href="/info/{neighborSet[0].id}">Detail view</a></td>
                   {/if}
                 {:else}
                   <td>&mdash;</td>

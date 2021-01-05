@@ -33,7 +33,7 @@
         description: "test plot",
         data: { values: chartData },
         width: "container",
-        height: 200,
+        height: 300,
         layer: [
           {
             mark: {
@@ -45,6 +45,9 @@
                 field: "Date",
                 type: "temporal",
                 timeUnit: "month",
+                axis: {
+                  tickCount: "month",
+                },
               },
               y: {
                 field: "Similarity",
@@ -114,10 +117,18 @@
 <style>
   .chart-container {
     width: 100%;
+    /*background-color: #eee;
+    border-radius: 8px;
+    height: 320px;
+    padding: 10px;*/
   }
   .comparison-container {
-    padding: 12px;
+    padding: 32px;
     min-height: 300px;
+    width: 70%;
+    min-width: 600px;
+    margin-left: auto;
+    margin-right: auto;
   }
   .explanation {
     font-size: small;
@@ -127,19 +138,22 @@
 </style>
 
 <svelte:options accessors />
-<div class="row px-0 comparison-container">
+<div class="row comparison-container">
   <div class="col-md-5">
-    <div class="mb-2">
+    <div class="mb-4">
       <Autocomplete
-        disabled
         {options}
+        placeholder="Reference item"
         selectedValue={firstID}
-        completeOnSelect />
+        completeOnSelect
+        on:change={(e) => {
+          firstID = e.detail;
+        }} />
     </div>
     {#each comparisonIDs as secondID, i}
       <div class="mb-2">
         <Autocomplete
-          placeholder="Choose a concept"
+          placeholder="Comparison item"
           selectedValue={secondID}
           {options}
           numResults={5}
