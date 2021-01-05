@@ -7,6 +7,7 @@
   import ComparisonView from "./ComparisonView.svelte";
   import Modal from "./Modal.svelte";
   import MainView from "./MainView.svelte";
+  import DetailView from "./DetailView.svelte";
 
   let selectedID = null;
 
@@ -33,7 +34,15 @@
 
   function selectPoint(newID) {
     selectedID = newID;
-    visibleView = "main";
+    if (visibleView == "detail") detailID = newID;
+    if (visibleView == "comparison") visibleView = "main";
+  }
+
+  let detailID = null;
+
+  function showDetailsAboutPoint(pointID) {
+    detailID = pointID;
+    visibleView = "detail";
   }
 </script>
 
@@ -121,6 +130,13 @@
       <li class="nav-item">
         <a
           class="nav-link"
+          class:active={visibleView == 'detail'}
+          href="#"
+          on:click|preventDefault={(e) => (visibleView = 'detail')}>Detail</a>
+      </li>
+      <li class="nav-item">
+        <a
+          class="nav-link"
           class:active={visibleView == 'comparison'}
           href="#"
           on:click|preventDefault={(e) => (visibleView = 'comparison')}>Compare</a>
@@ -137,6 +153,16 @@
     <div class:invisible-left={visibleView != 'main'} class="page-container">
       <MainView
         {selectedID}
+        on:detail={(e) => showDetailsAboutPoint(e.detail)}
+        on:compare={(e) => startComparison(e.detail.firstID, e.detail.comparisonIDs)} />
+    </div>
+    <div
+      class:invisible-left={visibleView == 'comparison'}
+      class:invisible-right={visibleView == 'main'}
+      class="page-container">
+      <DetailView
+        entityID={detailID}
+        on:detail={(e) => showDetailsAboutPoint(e.detail)}
         on:compare={(e) => startComparison(e.detail.firstID, e.detail.comparisonIDs)} />
     </div>
     <div
@@ -146,7 +172,8 @@
         bind:this={comparisonView}
         firstID={firstComparisonID}
         {comparisonIDs}
-        options={searchItems} />
+        options={searchItems}
+        on:detail={(e) => showDetailsAboutPoint(e.detail)} />
     </div>
   </div>
 </main>

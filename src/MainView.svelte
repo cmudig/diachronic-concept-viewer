@@ -44,6 +44,7 @@
       frame={selectedFrame}
       {previewFrame}
       on:select={(e) => (selectedID = e.detail)}
+      on:detail
       on:compare={(e) => dispatch('compare', {
           firstID: selectedID,
           comparisonIDs: [e.detail],

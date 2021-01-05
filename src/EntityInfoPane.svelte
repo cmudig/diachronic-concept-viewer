@@ -181,9 +181,11 @@
     <div class="selection-info-container">
       <div class="selection-header">
         <h4 style="flex-grow: 1;">
-          <a href="/info/{entityID}">{@html title}</a>
+          {@html title}
         </h4>
-        <button class="btn btn-dark btn-sm mr-1">Details</button>
+        <button
+          class="btn btn-dark btn-sm mr-1"
+          on:click={() => dispatch('detail', entityID)}>Details</button>
         <button
           class="btn btn-dark btn-sm"
           on:click={() => dispatch('compare')}>Compare...</button>
@@ -217,16 +219,14 @@
                       {#if hoveringNeighborID == neighborSet[0].id}
                         <p class="small mb-0 mr-2">Click to view</p>
                         <button
+                          class="btn btn-dark btn-sm my-0 ml-2"
+                          on:click|stopPropagation={(e) => dispatch('detail', neighborSet[0].id)}>Details</button>
+                        <button
                           class="btn btn-dark btn-sm my-0 mx-2"
                           on:click|stopPropagation={(e) => dispatch('compare', neighborSet[0].id)}>Compare</button>
                       {/if}
                     </div>
                   </td>
-                  {#if !!neighborSet[1]}
-
-                  {:else}
-                    <td><a href="/info/{neighborSet[0].id}">Detail view</a></td>
-                  {/if}
                 {:else}
                   <td>&mdash;</td>
                 {/if}

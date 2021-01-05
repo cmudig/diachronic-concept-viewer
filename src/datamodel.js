@@ -58,6 +58,10 @@ export async function getVisualizationData() {
   };
 }
 
+export async function getFrameLabels() {
+  return ["April", "May", "June", "July", "August", "September", "October"];
+}
+
 // TODO remove when using API
 let thumbnailInfo = thumbnailData.items;
 
@@ -76,10 +80,12 @@ let thumbnailInfo = thumbnailData.items;
  *  - frameDescriptions: An object keyed by frame numbers with strings specific
  *    to each frame
  *  - neighbors: An object keyed by frame numbers with lists of objects for the
- *    neighbors in each frame, where each neighbor object contains an "id" and a
- *    "name" field
+ *    neighbors in each frame, where each neighbor object contains the following
+ *    fields: "id", "name", "distance"
  *  - presenceFlags: An object keyed by frame numbers with booleans indicating
  *    whether the entity is present in the frame
+ *  - confidences: An object keyed by frame numbers with values representing the
+ *    confidence in each frame
  */
 export async function getEntityInfo(entityID, options = {}) {
   // TODO Call API
@@ -91,6 +97,7 @@ export async function getEntityInfo(entityID, options = {}) {
   let neighbors = {};
   let presenceFlags = {};
   let frameDescriptions = {};
+  let confidences = {};
 
   let frameIndexes = options.frames || d3.range(dummyData.length);
   frameIndexes.forEach((f) => {
@@ -108,8 +115,10 @@ export async function getEntityInfo(entityID, options = {}) {
     neighbors[f] = frameItem.highlight.slice(0, numNeighbors).map((n) => ({
       id: n,
       name: !!thumbnailInfo[n] ? thumbnailInfo[n].name : "(not found)",
+      distance: Math.random() * 0.5,
     }));
     frameDescriptions[f] = `Dummy description for frame ${f}`;
+    confidences[f] = Math.random();
   });
 
   return {
@@ -117,7 +126,9 @@ export async function getEntityInfo(entityID, options = {}) {
     description: info.description,
     neighbors,
     presenceFlags,
+    confidences,
     frameDescriptions,
+    otherTerms: ["blah", "blah"],
   };
 }
 
