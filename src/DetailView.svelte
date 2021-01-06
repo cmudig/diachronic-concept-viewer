@@ -3,6 +3,7 @@
   import * as DataModel from "./datamodel";
   import Icon from "fa-svelte";
   import { faEllipsisV } from "@fortawesome/free-solid-svg-icons/faEllipsisV";
+  import FrameComparisonPlot from "./FrameComparisonPlot.svelte";
 
   const dispatch = createEventDispatcher();
 
@@ -13,6 +14,8 @@
   let frameLabels = [];
   let tables = [];
   let numNeighbors = 10;
+
+  let confidenceData = [];
 
   $: if (!!entityID) {
     isLoading = true;
@@ -25,6 +28,7 @@
       frameLabels = results[1];
       console.log(results);
       updateTables();
+      updateConfidencePlot();
     });
   }
 
@@ -35,7 +39,14 @@
       isLowConfidence: info.confidences[i] < 0.5,
       neighbors: info.neighbors[i] || [],
     }));
-    console.log("Updated tables", tables);
+  }
+
+  function updateConfidencePlot() {
+    confidenceData = frameLabels.map((label, i) => ({
+      Date: label,
+      Confidence: info.confidences[i],
+    }));
+    console.log(confidenceData);
   }
 
   let title;
@@ -82,6 +93,14 @@
     overflow: scroll;
   }
 
+  .message-container {
+    display: flex;
+    justify-items: center;
+    align-items: center;
+    height: 100%;
+    width: 100%;
+  }
+
   .no-selection-message {
     text-align: center;
     color: darkgray;
@@ -109,36 +128,48 @@
     min-height: 22px;
     align-items: center;
   }
+
+  .spinner-border {
+    margin-left: auto;
+    margin-right: auto;
+  }
 </style>
 
 <div id="info_panel" class="container">
-  {#if isLoading}
-    <div class="row text-center">
-      <div class="spinner-border text-primary" role="status">
-        <span class="sr-only">Loading...</span>
-      </div>
-    </div>
-  {:else if !entityID}
-    <div class="row text-center">
-      <div class="no-selection-message">
-        Search for a concept above or select one in the Browse view.
-      </div>
+  {#if isLoading || !entityID}
+    <div class="message-container">
+      {#if !entityID}
+        <div class="no-selection-message">
+          Search for a concept above or select one in the Browse view.
+        </div>
+      {:else}
+        <div class="spinner-border text-primary" role="status">
+          <span class="sr-only">Loading...</span>
+        </div>
+      {/if}
     </div>
   {:else if !!info}
     <h2 class="entity-title">
       {@html title}
     </h2>
-    <div class="row">
-      <div class="col-md-7" id="termListPanel">
-        Other terms
+    <div class="row pb-4">
+      <div class="col-md-5" id="termListPanel">
+        <h5>Concept Info</h5>
+        Other terms:
         <ul>
           {#each info.otherTerms as term}
             <li>{term}</li>
           {/each}
         </ul>
       </div>
-      <div class="col-md-5" id="confidencePanel">
-        <h5>Embedding confidence</h5>
+      <div class="col-md-7" id="confidencePanel">
+        <h5>Embedding Confidence</h5>
+        <FrameComparisonPlot
+          height={280}
+          data={confidenceData}
+          frameField="Date"
+          yField="Confidence"
+          {frameLabels} />
       </div>
     </div>
 
@@ -175,7 +206,7 @@
                         <p
                           class="small mb-0 mr-2"
                           style="visibility: {hoveringCell == neighbor.id + ',' + table.title ? 'visible' : 'hidden'}">
-                          {neighbor.distance.toFixed(3)}
+                          {neighbor.distance != null ? neighbor.distance.toFixed(3) : '--'}
                         </p>
                         <div
                           style="visibility: {hoveringCell == neighbor.id + ',' + table.title || contextMenuCell == neighbor.id + ',' + table.title ? 'visible' : 'hidden'}; position: relative;">

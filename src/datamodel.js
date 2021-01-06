@@ -4,6 +4,16 @@ import { dummyData } from "./dummy-data/data.js";
 import { thumbnailData } from "./dummy-data/thumbnails.js";
 import * as d3 from "d3";
 
+const frameLabels = [
+  "2020-03-27",
+  "2020-04-24",
+  "2020-05-31",
+  "2020-06-30",
+  "2020-07-31",
+  "2020-08-29",
+  "2020-09-28",
+  "2020-10-31",
+];
 /**
  * Get the visualization data as a JSON object. The structure of the returned
  * data should be as follows:
@@ -46,20 +56,12 @@ export async function getVisualizationData() {
   // TODO Call API
   return {
     data: dummyData,
-    frameLabels: [
-      "April",
-      "May",
-      "June",
-      "July",
-      "August",
-      "September",
-      "October",
-    ],
+    frameLabels,
   };
 }
 
 export async function getFrameLabels() {
-  return ["April", "May", "June", "July", "August", "September", "October"];
+  return frameLabels;
 }
 
 // TODO remove when using API
@@ -71,7 +73,6 @@ let thumbnailInfo = thumbnailData.items;
  * @param {*} entityID the ID string for the entity
  * @param {*} options A dictionary of options. Allowed keys:
  *  - numNeighbors: The number of neighbors to retrieve per frame.
- *  - frames: Indexes of frames from which to return neighbors.
  *
  * @return An object representing the entity. Available fields:
  *  - name: The name of the entity
@@ -82,54 +83,12 @@ let thumbnailInfo = thumbnailData.items;
  *  - neighbors: An object keyed by frame numbers with lists of objects for the
  *    neighbors in each frame, where each neighbor object contains the following
  *    fields: "id", "name", "distance"
- *  - presenceFlags: An object keyed by frame numbers with booleans indicating
- *    whether the entity is present in the frame
  *  - confidences: An object keyed by frame numbers with values representing the
  *    confidence in each frame
  */
 export async function getEntityInfo(entityID, options = {}) {
-  // TODO Call API
-  if (!thumbnailInfo[entityID]) {
-    return null;
-  }
-
-  let info = thumbnailInfo[entityID];
-  let neighbors = {};
-  let presenceFlags = {};
-  let frameDescriptions = {};
-  let confidences = {};
-
-  let frameIndexes = options.frames || d3.range(dummyData.length);
-  frameIndexes.forEach((f) => {
-    let frameItem = dummyData[f][entityID];
-    if (!frameItem || !frameItem.highlight) {
-      neighbors[f] = [];
-      presenceFlags[f] = false;
-      return;
-    }
-
-    presenceFlags[f] = true;
-    let numNeighbors = options.hasOwnProperty("numNeighbors")
-      ? options.numNeighbors
-      : 10;
-    neighbors[f] = frameItem.highlight.slice(0, numNeighbors).map((n) => ({
-      id: n,
-      name: !!thumbnailInfo[n] ? thumbnailInfo[n].name : "(not found)",
-      distance: Math.random() * 0.5,
-    }));
-    frameDescriptions[f] = `Dummy description for frame ${f}`;
-    confidences[f] = Math.random();
-  });
-
-  return {
-    name: info.name,
-    description: info.description,
-    neighbors,
-    presenceFlags,
-    confidences,
-    frameDescriptions,
-    otherTerms: ["blah", "blah"],
-  };
+  let result = await fetch(`/info/${entityID}`);
+  return await result.json();
 }
 
 /**
@@ -153,27 +112,17 @@ export async function getAllEntities() {
  * @param firstID the CUI of the first concept
  * @param secondID the CUI of the second concept
  *
- * @return A list of objects where each object specifies a similarity at a given
- *  month. The objects should contain the following keys:
- *  - "date": A date string
- *  - "mean_similarity": A floating point value indicating the similarity
- *  - "std_similarity": A floating point value for the standard deviation of
- *    similarity at this point
+ * @return An object with the following keys:
+ *   "firstName": name of the first concept
+ *   "secondName": name of the second concept
+ *   "similarities": an object keyed by frame number whose values are objects
+ *      that contain the following keys:
+ *    - "label": The label for the frame
+ *    - "meanSimilarity": A floating point value indicating the similarity
+ *    - "stdSimilarity": A floating point value for the standard deviation of
+ *      similarity at this point
  */
 export async function getPairwiseSimilarity(firstID, secondID) {
-  // TODO use API
-  const months = [
-    "Apr 1 2020",
-    "May 1 2020",
-    "Jun 1 2020",
-    "Jul 1 2020",
-    "Aug 1 2020",
-    "Sep 1 2020",
-    "Oct 1 2020",
-  ];
-  return months.map((m) => ({
-    date: m,
-    mean_similarity: Math.random(),
-    std_similarity: Math.random() * 0.4,
-  }));
+  let result = await fetch(`/pairwise/${firstID}/${secondID}`);
+  return await result.json();
 }

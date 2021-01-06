@@ -11,6 +11,7 @@
 
   let neighborInfo = [];
 
+  let isLoading = false;
   let info;
 
   let title;
@@ -37,7 +38,9 @@
   }
 
   async function loadEntityInfo() {
+    isLoading = true;
     info = await DataModel.getEntityInfo(entityID);
+    isLoading = false;
   }
 
   $: if (!!info && !!info.neighbors) {
@@ -102,7 +105,7 @@
 </script>
 
 <style>
-  .no-selection-container {
+  .message-container {
     display: flex;
     justify-items: center;
     align-items: center;
@@ -168,14 +171,25 @@
   .neighbor-insertion {
     color: #34b740;
   }
+
+  .spinner-border {
+    margin-left: auto;
+    margin-right: auto;
+  }
 </style>
 
 <div class="info-pane-container">
-  {#if entityID == null}
-    <div class="no-selection-container">
-      <p class="no-selection-message">
-        Select a concept from the plot or search for one above.
-      </p>
+  {#if entityID == null || isLoading}
+    <div class="message-container">
+      {#if !entityID}
+        <p class="no-selection-message">
+          Select a concept from the plot or search for one above.
+        </p>
+      {:else}
+        <div class="spinner-border text-primary" role="status">
+          <span class="sr-only">Loading...</span>
+        </div>
+      {/if}
     </div>
   {:else}
     <div class="selection-info-container">
