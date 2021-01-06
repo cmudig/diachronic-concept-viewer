@@ -77,17 +77,20 @@
     right: 0;
 
     transform: translate(0, 0);
-    transition: transform 0.6s ease-in-out;
+    opacity: 1;
+    transition: transform 0.6s ease-in-out, opacity 0.6s linear;
   }
 
   .invisible-left {
     transform: translate(-100%, 0);
-    transition: transform 0.6s ease-in-out;
+    opacity: 0;
+    transition: transform 0.6s ease-in-out, opacity 0.6s linear;
   }
 
   .invisible-right {
     transform: translate(100%, 0);
-    transition: transform 0.6s ease-in-out;
+    opacity: 0;
+    transition: transform 0.6s ease-in-out, opacity 0.6s linear;
   }
 
   .dropdown-container {

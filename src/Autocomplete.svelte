@@ -24,13 +24,11 @@
   export let disabled = false;
 
   let oldSelectedValue = null;
-  $: if (
-    completeOnSelect &&
-    !!selectedValue &&
-    selectedValue != oldSelectedValue
-  ) {
-    let selectedItem = options.find((val) => val.value == selectedValue);
-    autocompleteText = `${selectedItem.value}: ${selectedItem.text}`;
+  $: if (completeOnSelect && selectedValue != oldSelectedValue) {
+    if (!!selectedValue) {
+      let selectedItem = options.find((val) => val.value == selectedValue);
+      autocompleteText = `${selectedItem.value}: ${selectedItem.text}`;
+    }
     oldSelectedValue = selectedValue;
   }
 
@@ -39,14 +37,21 @@
   $: {
     if (!!autocompleteText) {
       let searchTerm = autocompleteText.toLocaleLowerCase();
-      visibleOptions = options.filter((item) =>
-        item.text.toLocaleLowerCase().includes(searchTerm)
+      visibleOptions = options.filter(
+        (item) =>
+          item.text.toLocaleLowerCase().includes(searchTerm) ||
+          item.value.toLocaleLowerCase().includes(searchTerm)
       );
       if (visibleOptions.length > numResults)
         visibleOptions = visibleOptions.slice(0, numResults);
     } else {
       visibleOptions = [];
     }
+    clearSelection();
+  }
+
+  function clearSelection() {
+    selectedValue = null;
   }
 
   function onPointSelectorItemClick(itemID) {
@@ -67,6 +72,10 @@
   .dropdown-item:hover {
     background-color: #eee;
     cursor: pointer;
+  }
+
+  .dropdown-item {
+    color: #111;
   }
 
   .dropdown-menu {
@@ -94,27 +103,26 @@
 <div class="autocomplete-container">
   <input
     type="search"
-    class="form-control mb-0"
+    autocorrect="off"
+    class="form-control mb-0 dropdown-toggle"
     {placeholder}
     {disabled}
+    data-toggle="dropdown"
     bind:this={autocomplete}
-    bind:value={autocompleteText}
-    on:focus={() => (autocompleteDropdownVisible = true)}
-    on:blur={() => {
-      setTimeout(() => (autocompleteDropdownVisible = false), 100);
-    }} />
+    bind:value={autocompleteText} />
   <ul
     class="dropdown-menu"
     class:dropdown-menu-right={right}
     bind:this={autocompleteDropdown}
-    style={autocompleteDropdownVisible && visibleOptions.length > 0 ? 'visibility: visible; display: block;' : 'visibility: hidden; display: none;'}
+    style={visibleOptions.length > 0 ? 'visibility: visible;' : 'visibility: hidden;'}
     role="menu">
     {#each visibleOptions as option}
-      <div
+      <a
+        href="#"
         class="dropdown-item"
-        on:click={() => onPointSelectorItemClick(option.value)}>
+        on:click|preventDefault={() => onPointSelectorItemClick(option.value)}>
         {@html styleText(option)}
-      </div>
+      </a>
     {/each}
   </ul>
 </div>
