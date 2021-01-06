@@ -18,6 +18,7 @@
   export let right = false;
 
   export let selectedValue = null;
+  let selectedValueText = null;
 
   export let completeOnSelect = false;
 
@@ -27,7 +28,10 @@
   $: if (completeOnSelect && selectedValue != oldSelectedValue) {
     if (!!selectedValue) {
       let selectedItem = options.find((val) => val.value == selectedValue);
-      autocompleteText = `${selectedItem.value}: ${selectedItem.text}`;
+      if (!!selectedItem) {
+        selectedValueText = `${selectedItem.value}: ${selectedItem.text}`;
+        autocompleteText = selectedValueText;
+      }
     }
     oldSelectedValue = selectedValue;
   }
@@ -47,11 +51,12 @@
     } else {
       visibleOptions = [];
     }
-    clearSelection();
+    if (autocompleteText != selectedValueText) clearSelection();
   }
 
   function clearSelection() {
     selectedValue = null;
+    dispatch("change", selectedValue);
   }
 
   function onPointSelectorItemClick(itemID) {

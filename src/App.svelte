@@ -1,11 +1,7 @@
 <script>
   import Autocomplete from "./Autocomplete.svelte";
-  import EntityInfoPane from "./EntityInfoPane.svelte";
-  import VisualizationPane from "./VisualizationPane.svelte";
   import * as DataModel from "./datamodel";
-  import { fade } from "svelte/transition";
   import ComparisonView from "./ComparisonView.svelte";
-  import Modal from "./Modal.svelte";
   import MainView from "./MainView.svelte";
   import DetailView from "./DetailView.svelte";
 
@@ -93,14 +89,6 @@
     opacity: 0;
     transition: transform 0.6s ease-in-out, opacity 0.6s linear;
   }
-
-  .dropdown-container {
-    position: relative;
-  }
-  .dropdown-item:hover {
-    background-color: #eee;
-    cursor: pointer;
-  }
 </style>
 
 <nav class="navbar navbar-dark navbar-expand-lg bg-dark">
@@ -156,7 +144,7 @@
   <div class="main-view-container">
     <div class:invisible-left={visibleView != 'main'} class="page-container">
       <MainView
-        {selectedID}
+        bind:selectedID
         on:detail={(e) => showDetailsAboutPoint(e.detail)}
         on:compare={(e) => startComparison(e.detail.firstID, e.detail.comparisonIDs)} />
     </div>

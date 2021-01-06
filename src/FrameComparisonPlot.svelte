@@ -5,6 +5,7 @@
   export let data = [];
   export let height = 300;
 
+  export let title = "";
   export let yErrorField = null;
   export let yField = null;
   export let frameField = "Date";
@@ -26,6 +27,9 @@
   function updateChart() {
     if (!!chartView && !!chartFinalizer) {
       chartFinalizer();
+      chartView._el.remove();
+      chartView = null;
+      chartFinalizer = null;
     }
     if (data.length > 0 && !!frameField && !!yField) {
       let transforms = [];
@@ -93,6 +97,7 @@
         description: "test plot",
         data: { values: data },
         background: "transparent",
+        title,
         width: "container",
         height: "container",
         transform: transforms,
