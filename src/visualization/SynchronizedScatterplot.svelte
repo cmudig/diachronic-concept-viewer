@@ -58,13 +58,14 @@
       !data.atFrame(clickedID, previewFrame)
     ) {
       warningMessage =
-        "The selected entity is not present in the destination frame";
+        "The selected entity is low-confidence for the destination month";
     } else if (
       !!clickedID &&
       (previewFrame < 0 || previewFrame == frame) &&
       !data.atFrame(clickedID, frame)
     ) {
-      warningMessage = "The selected entity is not present in this plot";
+      warningMessage =
+        "The selected entity is low-confidence and will not appear in the plot";
     } else {
       warningMessage = "";
     }
@@ -421,7 +422,6 @@
   }
 
   function handleResize() {
-    console.log("resizing");
     actualWidth = container.clientWidth;
     actualHeight = container.clientHeight;
   }

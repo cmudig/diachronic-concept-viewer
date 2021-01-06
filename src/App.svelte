@@ -34,14 +34,11 @@
 
   function selectPoint(newID) {
     selectedID = newID;
-    if (visibleView == "detail") detailID = newID;
     if (visibleView == "comparison") visibleView = "main";
   }
 
-  let detailID = null;
-
   function showDetailsAboutPoint(pointID) {
-    detailID = pointID;
+    selectedID = pointID;
     visibleView = "detail";
   }
 </script>
@@ -79,6 +76,10 @@
     transform: translate(0, 0);
     opacity: 1;
     transition: transform 0.6s ease-in-out, opacity 0.6s linear;
+  }
+
+  .scrollable {
+    overflow: scroll;
   }
 
   .invisible-left {
@@ -162,9 +163,9 @@
     <div
       class:invisible-left={visibleView == 'comparison'}
       class:invisible-right={visibleView == 'main'}
-      class="page-container">
+      class="page-container scrollable">
       <DetailView
-        entityID={detailID}
+        entityID={selectedID}
         on:detail={(e) => showDetailsAboutPoint(e.detail)}
         on:compare={(e) => startComparison(e.detail.firstID, e.detail.comparisonIDs)} />
     </div>
