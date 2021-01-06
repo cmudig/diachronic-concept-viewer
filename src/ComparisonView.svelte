@@ -11,6 +11,8 @@
   $: validIDs = comparisonIDs.filter((id) => !!id);
 
   let frameLabels = [];
+  let errorMessage = null;
+  let isLoading = false;
 
   let chartData = [];
 
@@ -29,27 +31,38 @@
   }
 
   async function loadSimilarityData(ids) {
-    frameLabels = await DataModel.getFrameLabels();
-    let resultsPerID = await Promise.all(
-      ids.map((secondID) => DataModel.getPairwiseSimilarity(firstID, secondID))
-    );
-    let similarities = resultsPerID.map(
-      (compResults) => compResults.similarities
-    );
-    let results = similarities
-      .map((compResults, i) =>
-        Object.keys(compResults).map((frameIdx) => {
-          let r = compResults[frameIdx];
-          return {
-            Date: r.label,
-            "Compared Item": resultsPerID[i].secondName,
-            Similarity: r.meanSimilarity,
-            SimilarityError: r.stdSimilarity * 1.96,
-          };
-        })
-      )
-      .flat();
-    return results;
+    isLoading = true;
+    try {
+      frameLabels = await DataModel.getFrameLabels();
+      let resultsPerID = await Promise.all(
+        ids.map((secondID) =>
+          DataModel.getPairwiseSimilarity(firstID, secondID)
+        )
+      );
+      errorMessage = null;
+      let similarities = resultsPerID.map(
+        (compResults) => compResults.similarities
+      );
+      let results = similarities
+        .map((compResults, i) =>
+          Object.keys(compResults).map((frameIdx) => {
+            let r = compResults[frameIdx];
+            return {
+              Date: r.label,
+              "Compared Item": resultsPerID[i].secondName,
+              Similarity: r.meanSimilarity,
+              SimilarityError: r.stdSimilarity * 1.96,
+            };
+          })
+        )
+        .flat();
+      isLoading = false;
+      return results;
+    } catch (error) {
+      errorMessage = "Comparison not available for these concepts.";
+      isLoading = false;
+      return [];
+    }
   }
 </script>
 
@@ -110,6 +123,8 @@
   </div>
   <div class="col-md-7">
     <FrameComparisonPlot
+      {isLoading}
+      {errorMessage}
       data={chartData}
       height={360}
       frameField="Date"

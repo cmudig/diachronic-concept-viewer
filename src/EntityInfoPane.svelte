@@ -19,7 +19,7 @@
     if (!entityID) title = "No concept selected";
     else {
       if (!!info) {
-        title = info.name;
+        title = entityID + " <strong>" + info.name + "</strong>";
       } else {
         title = entityID;
       }
@@ -194,7 +194,7 @@
   {:else}
     <div class="selection-info-container">
       <div class="selection-header">
-        <h4 style="flex-grow: 1;">
+        <h4 style="flex-grow: 1; font-weight: 200;">
           {@html title}
         </h4>
         <button

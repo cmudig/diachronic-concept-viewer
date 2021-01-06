@@ -149,7 +149,7 @@
       {/if}
     </div>
   {:else if !!info}
-    <h2 class="entity-title">
+    <h2 class="entity-title pb-4">
       {@html title}
     </h2>
     <div class="row pb-4">

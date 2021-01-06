@@ -12,6 +12,9 @@
 
   export let colorField = null;
 
+  export let isLoading = false;
+  export let errorMessage = null;
+
   let oldChartData = null;
   let chartView = null;
   let chartFinalizer = null;
@@ -124,7 +127,13 @@
   class="chart-container"
   style="height: {height}px;"
   bind:this={chartContainer}>
-  {#if data.length == 0}
-    <div class="empty-message">No data</div>
+  {#if data.length == 0 || !!errorMessage}
+    <div class="empty-message">
+      {#if isLoading}
+        <div class="spinner-border text-primary" role="status">
+          <span class="sr-only">Loading...</span>
+        </div>
+      {:else if !!errorMessage}{errorMessage}{:else}No data{/if}
+    </div>
   {/if}
 </div>
