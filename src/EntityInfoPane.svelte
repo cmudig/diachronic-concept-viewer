@@ -29,11 +29,8 @@
   let description;
   $: {
     if (!entityID || !info) description = "";
-    else {
-      description = "<p>" + info.description.replace("\n", "</p><p>") + "</p>";
-      if (!!info.frameDescriptions[frame]) {
-        description += "<p>" + info.frameDescriptions[frame] + "</p>";
-      }
+    else if (!!info.frameDescriptions[frame]) {
+      description = "<p>" + info.frameDescriptions[frame] + "</p>";
     }
   }
 

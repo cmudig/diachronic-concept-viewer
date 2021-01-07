@@ -249,7 +249,7 @@
     clickedID = pointID;
     dispatch("dataclick", clickedID);
 
-    if (!!clickedID) {
+    if (!!clickedID && !!data.byID(clickedID)) {
       // Find the nearest neighbors in all frames and highlight those
       let filteredPoints = new Set([clickedID]);
       let highlightIndexes = data.byID(clickedID).highlightIndexes;

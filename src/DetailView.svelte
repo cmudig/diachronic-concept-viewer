@@ -87,6 +87,26 @@
   let hoveringCell = null;
   let hoveringID = null;
   let contextMenuCell = null;
+
+  const MaxDefinitionLength = 250;
+  let definitionsExpanded = false;
+  let definitionPreview = "";
+  let showDefinitionExpandButton = false;
+  $: if (!!info && !!info.definitions && info.definitions.length > 0) {
+    showDefinitionExpandButton =
+      info.definitions.length > 1 ||
+      info.definitions[0].length > MaxDefinitionLength;
+    definitionPreview = info.definitions[0];
+    if (definitionPreview.length > MaxDefinitionLength) {
+      let wordBoundary =
+        definitionPreview.substring(MaxDefinitionLength).search(/\W/) +
+        MaxDefinitionLength;
+      definitionPreview = definitionPreview.substring(0, wordBoundary) + "...";
+    }
+  } else {
+    showDefinitionExpandButton = false;
+    definitionPreview = "";
+  }
 </script>
 
 <style>
@@ -166,6 +186,18 @@
     color: white;
     font-size: small;
   }
+
+  .definition-container {
+    max-height: 240px;
+    margin-bottom: 16px;
+    overflow-y: scroll;
+  }
+
+  .definition {
+    border-radius: 4px;
+    padding: 8px;
+    background-color: #eee;
+  }
 </style>
 
 <div id="info_panel" class="container">
@@ -188,7 +220,33 @@
     <div class="row pb-4">
       <div class="col-md-5" id="termListPanel">
         <h4>Concept Info</h4>
-        Other terms:
+        {#if !!info.definitions && info.definitions.length > 0}
+          <p class="mb-1"><em>Definitions:</em></p>
+          {#if showDefinitionExpandButton && definitionsExpanded}
+            <div class="definition-container">
+              {#each info.definitions as definition}
+                <p class="definition">
+                  {@html definition}
+                </p>
+              {/each}
+              <a
+                href="#"
+                on:click|preventDefault={() => (definitionsExpanded = false)}>Show
+                less</a>
+            </div>
+          {:else}
+            <p class="definition">
+              {@html definitionPreview}
+              {#if showDefinitionExpandButton}
+                <a
+                  href="#"
+                  on:click|preventDefault={() => (definitionsExpanded = true)}>Show
+                  more</a>
+              {/if}
+            </p>
+          {/if}
+        {/if}
+        <p class="mb-1"><em>Other terms:</em></p>
         <ul>
           {#each info.otherTerms as term}
             <li>{term}</li>
