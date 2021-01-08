@@ -58,14 +58,14 @@
       !data.atFrame(clickedID, previewFrame)
     ) {
       warningMessage =
-        "The selected entity is low-confidence for the destination month";
+        "The selected entity does not appear in the plot for the destination month";
     } else if (
       !!clickedID &&
       (previewFrame < 0 || previewFrame == frame) &&
       !data.atFrame(clickedID, frame)
     ) {
       warningMessage =
-        "The selected entity is low-confidence and will not appear in the plot";
+        "The selected entity does not appear in this plot (see legend)";
     } else {
       warningMessage = "";
     }
@@ -257,7 +257,9 @@
       // Add another round of neighbors
       allNeighbors.forEach((n) => {
         filteredPoints.add(n);
-        let highlightIndexes = data.byID(n).highlightIndexes;
+        let datapt = data.byID(n);
+        if (!datapt) return;
+        let highlightIndexes = datapt.highlightIndexes;
         Object.values(highlightIndexes)
           .flat()
           .forEach((id) => filteredPoints.add(id));
@@ -371,9 +373,9 @@
     isCenteredOnPoint = false;
 
     scales.zoomTo(
-      Array.from(dataManager.filterVisiblePoints).map((pt) =>
-        dataManager.marks.getMarkByID(pt)
-      )
+      Array.from(dataManager.filterVisiblePoints)
+        .map((pt) => dataManager.marks.getMarkByID(pt))
+        .filter((mark) => !!mark)
     );
   }
 

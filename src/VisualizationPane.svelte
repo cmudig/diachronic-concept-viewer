@@ -20,6 +20,7 @@
   };
 
   let colorScale;
+  let isLoading = false;
 
   let useHalos = false;
 
@@ -37,15 +38,20 @@
 
   // Note: it's very important that the callback doesn't READ any properties that
   // it also WRITES
-  $: Model.getVisualizationData()
-    .then((respJSON) => {
-      currentFrame = 0;
-      previewFrame = 0;
-      initializeData(respJSON);
-    })
-    .catch((err) => {
-      data = null;
-    });
+  $: {
+    isLoading = true;
+    Model.getVisualizationData()
+      .then((respJSON) => {
+        currentFrame = 0;
+        previewFrame = 0;
+        initializeData(respJSON);
+        isLoading = false;
+      })
+      .catch((err) => {
+        data = null;
+        isLoading = false;
+      });
+  }
 
   function initializeData(respJSON) {
     data = new Dataset(respJSON, colorChannel, 3);
@@ -114,6 +120,15 @@
     height: 100%;
   }
 
+  .message-container {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    height: 100%;
+    width: 100%;
+  }
+
   .vis-container {
     width: 100%;
     height: 100%;
@@ -172,38 +187,48 @@
         </div>
       {/each}
     </div>
-  {/if}
 
-  <div class="scatterplot">
-    <div class="scatterplot-parent">
-      <SynchronizedScatterplot
-        {data}
-        hoverable
-        {colorScheme}
-        {useHalos}
-        frame={currentFrame}
-        {previewFrame}
-        animateTransitions
-        bind:this={canvas}
-        on:colorScale={(e) => (colorScale = e.detail)}
-        on:datahover={onScatterplotHover}
-        on:dataclick={onScatterplotClick} />
-      {#if showLegend}
-        <div
-          class="legend-container"
-          transition:fade
-          on:mouseout={() => {
-            showLegend = false;
-          }}>
-          <Legend {colorScale} type={colorScheme.type || 'continuous'} />
-        </div>
-      {:else}
-        <button
-          class="btn btn-light btn-sm legend-hoverable"
-          on:mouseover={() => {
-            showLegend = true;
-          }}>Legend</button>
-      {/if}
+    <div class="scatterplot">
+      <div class="scatterplot-parent">
+        <SynchronizedScatterplot
+          {data}
+          hoverable
+          {colorScheme}
+          {useHalos}
+          frame={currentFrame}
+          {previewFrame}
+          animateTransitions
+          bind:this={canvas}
+          on:colorScale={(e) => (colorScale = e.detail)}
+          on:datahover={onScatterplotHover}
+          on:dataclick={onScatterplotClick} />
+        {#if showLegend}
+          <div
+            class="legend-container"
+            transition:fade
+            on:mouseout={() => {
+              showLegend = false;
+            }}>
+            <Legend {colorScale} type={colorScheme.type || 'continuous'} />
+            <p class="small m-2" style="max-width: 300px;">
+              The plot shows a subset of semantic types, and includes only
+              concepts with high confidence. Some concepts may not be visible
+              when selected.
+            </p>
+          </div>
+        {:else}
+          <button
+            class="btn btn-light btn-sm legend-hoverable"
+            on:mouseover={() => {
+              showLegend = true;
+            }}>Legend</button>
+        {/if}
+      </div>
     </div>
-  </div>
+  {:else if isLoading}
+    <div class="message-container">
+      <p class="small">Loading visualization...</p>
+      <div class="spinner-border text-primary" role="status" />
+    </div>
+  {/if}
 </div>

@@ -29,6 +29,7 @@
   }
 
   function selectPoint(newID) {
+    if (!newID) return;
     selectedID = newID;
     if (visibleView == "comparison") visibleView = "main";
   }

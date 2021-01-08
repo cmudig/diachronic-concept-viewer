@@ -1,19 +1,9 @@
 // Interface for working with the backend.
 
-import { dummyData } from "./dummy-data/data.js";
-import { thumbnailData } from "./dummy-data/thumbnails.js";
-import * as d3 from "d3";
+// Caches
+let visualizationData;
+let allEntities;
 
-const frameLabels = [
-  "2020-03-27",
-  "2020-04-24",
-  "2020-05-31",
-  "2020-06-30",
-  "2020-07-31",
-  "2020-08-29",
-  "2020-09-28",
-  "2020-10-31",
-];
 /**
  * Get the visualization data as a JSON object. The structure of the returned
  * data should be as follows:
@@ -53,19 +43,22 @@ const frameLabels = [
  *  }
  */
 export async function getVisualizationData() {
-  // TODO Call API
-  return {
-    data: dummyData,
-    frameLabels,
-  };
+  if (!!visualizationData) {
+    return visualizationData;
+  }
+
+  let result = await fetch(`/visualization`);
+  result = await result.json();
+  visualizationData = result;
+  return result;
 }
 
 export async function getFrameLabels() {
-  return frameLabels;
+  if (!!visualizationData) {
+    await getVisualizationData();
+  }
+  return visualizationData.frameLabels;
 }
-
-// TODO remove when using API
-let thumbnailInfo = thumbnailData.items;
 
 /**
  * Get info about a given entity/concept.
@@ -99,11 +92,10 @@ export async function getEntityInfo(entityID, options = {}) {
  *  - name: The name of the entity
  */
 export async function getAllEntities() {
-  // TODO use API
-  return Object.keys(thumbnailInfo).map((id) => ({
-    id,
-    name: thumbnailInfo[id].name,
-  }));
+  if (!!allEntities) return allEntities;
+  let result = await fetch("/entities");
+  allEntities = await result.json();
+  return allEntities;
 }
 
 /**
