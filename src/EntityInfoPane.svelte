@@ -196,7 +196,7 @@
         </h4>
         <button
           class="btn btn-dark btn-sm mr-1"
-          on:click={() => dispatch('detail', entityID)}>Details</button>
+          on:click={() => dispatch('detail', entityID)}>Inspect</button>
         <button
           class="btn btn-dark btn-sm"
           on:click={() => dispatch('compare')}>Compare...</button>
@@ -231,7 +231,7 @@
                         <p class="small mb-0 mr-2">Click to view</p>
                         <button
                           class="btn btn-dark btn-sm my-0 ml-2"
-                          on:click|stopPropagation={(e) => dispatch('detail', neighborSet[0].id)}>Details</button>
+                          on:click|stopPropagation={(e) => dispatch('detail', neighborSet[0].id)}>Inspect</button>
                         <button
                           class="btn btn-dark btn-sm my-0 mx-2"
                           on:click|stopPropagation={(e) => dispatch('compare', neighborSet[0].id)}>Compare</button>

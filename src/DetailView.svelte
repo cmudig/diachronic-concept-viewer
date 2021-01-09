@@ -326,7 +326,7 @@
                             <a
                               class="dropdown-item"
                               href="#"
-                              on:click|preventDefault={() => dispatch('detail', neighbor.id)}>Details</a>
+                              on:click|preventDefault={() => dispatch('detail', neighbor.id)}>Inspect</a>
                             <a
                               class="dropdown-item"
                               href="#"
