@@ -211,9 +211,9 @@
             }}>
             <Legend {colorScale} type={colorScheme.type || 'continuous'} />
             <p class="small m-2" style="max-width: 300px;">
-              The plot shows a subset of semantic types, and includes only
-              concepts with high confidence. Some concepts may not be visible
-              when selected.
+              The plot shows a subset of semantic types and filters concepts by
+              confidence in each month. Some concepts may not be visible when
+              selected.
             </p>
           </div>
         {:else}

@@ -263,7 +263,7 @@
         The plot shows the cosine similarity between the embeddings for the
         reference item and each comparison item over time. Error bars show 95%
         prediction intervals for the mean cosine similarity over 10 embedding
-        trials.
+        replicates.
       </div>
     </div>
     <div class="col-md-7">

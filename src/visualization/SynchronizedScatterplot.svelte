@@ -96,6 +96,10 @@
       }
     } else if (!!clickedID) {
       updateStarGraph(clickedID);
+
+      if (!isCenteredOnPoint) {
+        showVicinityOfClickedPoint();
+      }
     }
 
     if (!!canvas && !animateTransitions) {

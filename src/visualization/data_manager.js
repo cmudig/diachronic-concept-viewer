@@ -549,7 +549,10 @@ export function DatasetManager(
   this.createStarGraph = function (nodeID, linkedNodeIDs) {
     let graph = new DecorationStarGraph(
       this.marks.getMarkByID(nodeID),
-      linkedNodeIDs.map((id) => this.marks.getMarkByID(id)).filter((m) => !!m)
+      linkedNodeIDs
+        .filter((id) => !!this.data.atFrame(id, this.currentFrameNumber))
+        .map((id) => this.marks.getMarkByID(id))
+        .filter((m) => !!m)
     );
     let graphID = "stargraph_" + nodeID + "_" + Math.floor(Math.random() * 1e9);
     let graphInfo = {
@@ -574,7 +577,10 @@ export function DatasetManager(
       ...newNeighbors,
     ];
     graphInfo.graph.updateNeighborMarks(
-      newNeighbors.map((id) => this.marks.getMarkByID(id)).filter((m) => !!m),
+      newNeighbors
+        .filter((id) => !!this.data.atFrame(id, this.currentFrameNumber))
+        .map((id) => this.marks.getMarkByID(id))
+        .filter((m) => !!m),
       this.marks,
       animated ? highlightDuration : 0
     );
