@@ -125,7 +125,7 @@
           class="nav-link"
           class:active={visibleView == 'detail'}
           href="#"
-          on:click|preventDefault={(e) => (visibleView = 'detail')}>Detail</a>
+          on:click|preventDefault={(e) => (visibleView = 'detail')}>Inspect</a>
       </li>
       <li class="nav-item">
         <a
