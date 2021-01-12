@@ -13,6 +13,5 @@ npm install
 npm run autobuild
 ```
 
-Currently the app expects a dataset in the `src/dummy-data` directory, consisting
-of a `data.js` file and a `thumbnails.js` file. The dataset should be in the same
-format as expected by `dr-viewer`.
+The autobuild server should be started _after_ starting the Flask backend server,
+so it does not occupy port 5000.
