@@ -3,8 +3,10 @@
   import * as d3legend from "d3-svg-legend";
   import { onMount } from "svelte";
 
-  export let width = 600;
-  export let height = 500;
+  export let width = null;
+  export let height = null;
+  let actualWidth = 100;
+  let actualHeight = 100;
   export let colorScale = null;
   export let numCells = 10; // for continuous
   export let type = "categorical";
@@ -26,36 +28,39 @@
     svg = d3
       .select(container)
       .append("svg")
-      .style("width", width)
-      .style("height", height)
-      .style("font-family", "sans-serif");
+      .style("font-family", "sans-serif")
+      .style("font-size", "10pt");
 
     if (type == "categorical") {
-      //let domainLabels = colorScale.domain();
+      let domainLabels = colorScale.domain();
+      actualWidth = 240;
+      actualHeight =
+        15 * domainLabels.length + 5 * (domainLabels.length + 1) + 20;
+      svg.style("width", actualWidth).style("height", actualHeight);
       svg
         .append("g")
         .attr("class", "legendOrdinal")
         .attr("transform", "translate(20, 20)");
-
       let legendOrdinal = d3legend
         .legendColor()
         .shape("circle")
-        .shapePadding(10)
-        .shapeRadius(10)
+        .shapePadding(5)
+        .shapeRadius(5)
         .orient("vertical")
         .scale(colorScale);
-
       svg.select(".legendOrdinal").call(legendOrdinal);
     } else if (type == "continuous") {
       let totalWidth = 30 * numCells + 1 * (numCells - 1);
+      actualWidth = totalWidth;
+      actualHeight = 45;
+      svg.style("width", actualWidth).style("height", actualHeight);
       svg
         .append("g")
         .attr("class", "legendLinear")
         .attr(
           "transform",
-          "translate(" + (width / 2 - totalWidth / 2).toFixed(1) + ",20)"
+          "translate(" + (actualWidth / 2 - totalWidth / 2).toFixed(1) + ",20)"
         );
-
       let legendLinear = d3legend
         .legendColor()
         .shapeWidth(30)
@@ -63,7 +68,6 @@
         .cells(numCells)
         .orient("horizontal")
         .scale(colorScale);
-
       svg.select(".legendLinear").call(legendLinear);
     }
   }
@@ -74,4 +78,9 @@
   });
 </script>
 
-<div bind:this={container} style="width: {width}px; height: {height}px;" />
+<div
+  bind:this={container}
+  style="width: {width != null ? width : actualWidth}px; height: {height != null
+    ? height
+    : actualHeight}px;"
+/>

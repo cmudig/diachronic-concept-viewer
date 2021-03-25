@@ -119,7 +119,7 @@
           <ScatterplotThumbnail
             on:click={() => (currentFrame = i)}
             on:mouseover={() => (previewFrame = i)}
-            on:mouseout={() => (previewFrame = -1)}
+            on:mouseleave={() => (previewFrame = -1)}
             isSelected={currentFrame == i}
             {colorScheme}
             {data}

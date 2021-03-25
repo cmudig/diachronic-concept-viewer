@@ -37,9 +37,9 @@
     isClicking = false;
   }
 
-  function onMouseout(obj) {
+  function onMouseleave(obj) {
     isHovering = false;
-    dispatch("mouseout");
+    dispatch("mouseleave");
   }
 </script>
 
@@ -50,7 +50,7 @@
   on:mouseover={onMouseover}
   on:mousedown={onMousedown}
   on:mouseup={onMouseup}
-  on:mouseout={onMouseout}
+  on:mouseleave={onMouseleave}
 >
   <Scatterplot
     thumbnail

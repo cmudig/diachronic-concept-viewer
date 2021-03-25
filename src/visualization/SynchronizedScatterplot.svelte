@@ -256,6 +256,7 @@
     on:datahover
     on:dataclick
     on:click
+    on:colorScale
   />
   {#if !thumbnail}
     <div id="button-panel">
