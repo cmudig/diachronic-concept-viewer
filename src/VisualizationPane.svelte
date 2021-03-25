@@ -59,6 +59,7 @@
 
   function updateThumbnailID(id) {
     thumbnailID = id;
+    oldThumbnailID = thumbnailID;
     dispatch("select", thumbnailID);
   }
 
@@ -80,7 +81,9 @@
   }
 
   function onScatterplotClick(e) {
-    updateThumbnailID(e.detail);
+    if (e.detail.length == 1 && e.detail[0] != thumbnailID)
+      updateThumbnailID(e.detail[0]);
+    else if (thumbnailID != null) updateThumbnailID(null);
   }
 
   let oldFrame = 0;

@@ -390,7 +390,9 @@
   }
 
   $: {
-    followingMarks = followingIDs.map((id) => marks.getMarkByID(id));
+    followingMarks = followingIDs
+      .map((id) => marks.getMarkByID(id))
+      .filter((m) => !!m);
   }
 </script>
 
