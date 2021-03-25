@@ -1,10 +1,13 @@
 import {
   buildKdTree,
   neighborMotionDifferencePreviewIntensities,
+  projectionNeighborSimilarityPreviewIntensities,
   neighborSimilarityPreviewIntensities,
   precomputedPreviewIntensities,
+  bundledPreviewIntensities,
 } from "./preview_intensity.js";
 import * as d3 from "d3";
+import { transformPoint } from "../utils/helpers.js";
 
 export function Dataset(rawData, colorKey, r = 4.0) {
   if (rawData["data"]) {
@@ -12,11 +15,14 @@ export function Dataset(rawData, colorKey, r = 4.0) {
     this.frames = rawData.data;
     this.previews = rawData.previews;
     this.frameLabels = rawData.frameLabels;
+    this.previewMode = rawData.previewMode || "projectionNeighborSimilarity";
   } else {
     // Old format
     this.frames = rawData;
     this.frameLabels = this.frames.map((f, i) => "Frame " + (i + 1));
+    this.previewMode = "projectionNeighborSimilarity";
   }
+  this.frameTransformations = [];
 
   this.getXExtent = function () {
     if (!this._xExtent) {
@@ -70,6 +76,7 @@ export function Dataset(rawData, colorKey, r = 4.0) {
       visible: el.visibleFlags[frame],
       previewLineWidths: el.previewLineWidths[frame],
       previewLineAlphas: el.previewLineAlphas[frame],
+      previewPaths: el.previewPaths[frame],
     };
   };
 
@@ -115,6 +122,7 @@ export function Dataset(rawData, colorKey, r = 4.0) {
           visibleFlags: {},
           previewLineWidths: {},
           previewLineAlphas: {},
+          previewPaths: {},
         })
     );
 
@@ -122,8 +130,15 @@ export function Dataset(rawData, colorKey, r = 4.0) {
       Object.keys(frame).forEach((id) => {
         let el = frame[id];
         points[id].hoverText = el.hoverText;
-        points[id].xs[f] = el.x;
-        points[id].ys[f] = el.y;
+        let point = [el.x, el.y];
+        if (
+          !!this.frameTransformations &&
+          this.frameTransformations.length > f
+        ) {
+          point = transformPoint(this.frameTransformations[f], point);
+        }
+        points[id].xs[f] = point[0];
+        points[id].ys[f] = point[1];
         points[id].colors[f] =
           colorKey == "constant" ? 0.0 : el[colorKey] || 0.0;
         points[id].alphas[f] = el.alpha != undefined ? el.alpha : 1.0;
@@ -137,14 +152,19 @@ export function Dataset(rawData, colorKey, r = 4.0) {
     this.points = Object.values(points);
     this.index = points;
     this.length = this.points.length;
-    this.neighborTrees = [];
 
     let xex = this.getXExtent();
     let yex = this.getYExtent();
     let neighborScale = (xex[1] - xex[0] + yex[1] - yex[0]) / 2.0;
 
+    if (!this.neighborTrees) {
+      this.neighborTrees = [];
+      this.frames.forEach((frame, i) => {
+        this.neighborTrees.push(buildKdTree(points, i));
+      });
+    }
+
     this.frames.forEach((frame, i) => {
-      this.neighborTrees.push(buildKdTree(points, i));
       Object.keys(points).forEach((id, j) => {
         if (!frame[id]) return;
 
@@ -161,22 +181,30 @@ export function Dataset(rawData, colorKey, r = 4.0) {
         if (!frame[id].previewLineWidths && !frame[id].previewLineAlphas) {
           let intensities;
           if (this.hasPreviews) {
-            intensities = precomputedPreviewIntensities(
-              points[id],
-              this,
-              i,
-              neighborScale
-            );
+            if (this.previewMode == "bundled") {
+              intensities = bundledPreviewIntensities(points[id], this, i);
+              points[id].previewPaths[i] = {};
+              if (!!this.previews[i]) {
+                Object.keys(this.previews[i]).forEach((previewNum) => {
+                  points[id].previewPaths[i][previewNum] =
+                    (this.previews[i][previewNum][id] || {}).path || [];
+                });
+              }
+            } else {
+              intensities = precomputedPreviewIntensities(
+                points[id],
+                this,
+                i,
+                neighborScale
+              );
+            }
+          } else if (this.previewMode == "neighborSimilarity") {
+            intensities = neighborSimilarityPreviewIntensities(points[id], i);
           } else {
-            /*intensities = neighborMotionDifferencePreviewIntensities(
+            // this.previewMode == "projectionNeighborSimilarity"
+            intensities = projectionNeighborSimilarityPreviewIntensities(
               points[id],
-              neighborTrees[i],
-              i,
-              neighborScale
-            );*/
-            intensities = neighborSimilarityPreviewIntensities(
-              points[id],
-              points,
+              this.neighborTrees,
               i
             );
           }
@@ -204,16 +232,72 @@ export function Dataset(rawData, colorKey, r = 4.0) {
     return allIDs;
   };
 
+  // Only works for precomputed (component-based) previews
   this.previewFrameHasID = function (frame, previewFrame, pointID) {
     if (!this.previews) return false;
 
     if (!this.previews[frame] || !this.previews[frame][previewFrame])
       return false;
 
+    if (this.previewMode == "mixed") {
+      let pointPreviews = this.previews[frame][previewFrame].points;
+      if (!pointPreviews) return false;
+      return !!pointPreviews[pointID];
+    }
+
     for (var comp of this.previews[frame][previewFrame]) {
       if (comp.component.includes(pointID)) return true;
     }
     return false;
+  };
+
+  this.previewDistance = function (frame, previewFrame, pointID) {
+    if (!this.previews) return null;
+
+    if (!this.previews[frame] || !this.previews[frame][previewFrame])
+      return null;
+
+    if (this.previewMode == "bundled") {
+      if (!this.previews[frame][previewFrame][pointID]) return null;
+      return this.previews[frame][previewFrame][pointID].distance;
+    } else if (this.previewMode == "mixed") {
+      let pointPreviews = this.previews[frame][previewFrame].points;
+      if (!pointPreviews || !pointPreviews[pointID]) return null;
+      return pointPreviews[pointID].distance;
+    }
+
+    for (var comp of this.previews[frame][previewFrame]) {
+      if (comp.component.includes(pointID)) return comp.distance;
+    }
+    return null;
+  };
+
+  this.previewComponentSize = function (frame, previewFrame, pointID) {
+    if (!this.previews) return 1;
+
+    if (!this.previews[frame] || !this.previews[frame][previewFrame]) return 1;
+
+    if (this.previewMode == "bundled") {
+      if (!this.previews[frame][previewFrame][pointID]) return 1;
+      return this.previews[frame][previewFrame][pointID].componentSize || 1;
+    } else if (this.previewMode == "mixed") {
+      console.warn("previewComponentSize doesn't work with mixed previews");
+      return null;
+    }
+
+    for (var comp of this.previews[frame][previewFrame]) {
+      if (comp.component.includes(pointID)) return comp.component.length;
+    }
+    return null;
+  };
+
+  // If previewMode is "mixed", returns previews from the "clusters" category
+  this.clusterPreviews = function (frame, previewFrame) {
+    if (this.previewMode != "mixed") return [];
+
+    if (!this.previews) return [];
+    if (!this.previews[frame] || !this.previews[frame][previewFrame]) return [];
+    return this.previews[frame][previewFrame].clusters || [];
   };
 
   // Gets the IDs of
@@ -223,7 +307,56 @@ export function Dataset(rawData, colorKey, r = 4.0) {
       .map((point) => point.id);
   };
 
+  this.transform = function (frameTransformations) {
+    this.frameTransformations = frameTransformations;
+    let points = this.index;
+    this.frames.forEach((frame, f) => {
+      Object.keys(frame).forEach((id) => {
+        let el = frame[id];
+        points[id].hoverText = el.hoverText;
+        let point = [el.x, el.y];
+        if (
+          !!this.frameTransformations &&
+          this.frameTransformations.length > f
+        ) {
+          point = transformPoint(this.frameTransformations[f], point);
+        }
+        points[id].xs[f] = point[0];
+        points[id].ys[f] = point[1];
+        points[id].colors[f] =
+          colorKey == "constant" ? 0.0 : el[colorKey] || 0.0;
+        points[id].alphas[f] = el.alpha != undefined ? el.alpha : 1.0;
+        points[id].halos[f] = el.halo;
+        points[id].highlightIndexes[f] = el.highlight.map((h) => "" + h);
+        points[id].visibleFlags[f] = true;
+        points[id].rs[f] = r;
+      });
+    });
+  };
+
+  // Adds metadata to each point based on the given thumbnails.json data
+  this.addThumbnails = function (thumbnailData) {
+    if (thumbnailData.format == "spritesheet") {
+      this.spritesheets = thumbnailData.spritesheets;
+      Object.keys(thumbnailData.items).forEach((id) => {
+        let item = thumbnailData.items[id];
+        this.index[id].label = {
+          sheet: item.sheet,
+          texture: item.texture,
+        };
+      });
+    } else if (thumbnailData.format == "text_descriptions") {
+      Object.keys(thumbnailData.items).forEach((id) => {
+        let item = thumbnailData.items[id];
+        this.index[id].label = {
+          text: item.name,
+        };
+      });
+    }
+  };
+
   this.frameCount = this.frames.length;
   this.hasPreviews = !!this.previews;
+  this.spritesheets = null;
   this.reformat();
 }

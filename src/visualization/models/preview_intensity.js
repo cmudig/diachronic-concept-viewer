@@ -6,11 +6,10 @@
   this point's transition into each preview frame.
 */
 
-import { kdTree } from "./kdTree";
+import { kdTree } from "../utils/kdTree";
 
 export function neighborSimilarityPreviewIntensities(
   point,
-  allPoints,
   currentFrameNumber
 ) {
   if (!point.visibleFlags[currentFrameNumber]) return {};
@@ -34,7 +33,7 @@ export function neighborSimilarityPreviewIntensities(
       intensity = { lineWidth: 0.0, lineAlpha: 0.0 };
     } else {
       intensity = {
-        lineWidth: Math.pow(1 - fraction / 0.3, 3) * 20.0,
+        lineWidth: Math.pow(1 - fraction / 0.3, 3) * 5.0, //20.0,
         lineAlpha: Math.pow(1 - fraction / 0.3, 3),
       }; //5.0 + 20.0 * (1.0 - fraction * fraction));
     }
@@ -75,6 +74,47 @@ export function buildKdTree(allPoints, currentFrameNumber) {
       return results.map((el) => el[0]);
     },
   };
+}
+
+export function projectionNeighborSimilarityPreviewIntensities(
+  point,
+  kdTrees,
+  currentFrameNumber,
+  k = 10
+) {
+  if (!point.visibleFlags[currentFrameNumber]) return {};
+
+  let currentNeighbors = new Set(
+    kdTrees[currentFrameNumber].nearest(point.id, k).map((n) => n.id)
+  );
+  let result = {};
+
+  Object.keys(point.visibleFlags).forEach((previewFrameNumber) => {
+    if (!point.visibleFlags[previewFrameNumber]) return;
+    let previewNeighbors = new Set(
+      kdTrees[previewFrameNumber].nearest(point.id, k).map((n) => n.id)
+    );
+    let intersectionCount = 0;
+    currentNeighbors.forEach((n) => {
+      if (previewNeighbors.has(n)) {
+        intersectionCount++;
+      }
+    });
+
+    let fraction = intersectionCount / currentNeighbors.size;
+    let intensity;
+    if (fraction >= 0.7) {
+      intensity = { lineWidth: 0.0, lineAlpha: 0.0 };
+    } else {
+      intensity = {
+        lineWidth: (1 - fraction / 0.7) * 30.0,
+        lineAlpha: 1 - fraction / 0.7,
+      }; //5.0 + 20.0 * (1.0 - fraction * fraction));
+    }
+    result[previewFrameNumber] = intensity;
+  });
+
+  return result;
 }
 
 // Takes the result of buildKdTree as an argument instead of allPoints
@@ -146,16 +186,50 @@ export function precomputedPreviewIntensities(
   Object.keys(point.visibleFlags).forEach((preview) => {
     if (!point.visibleFlags[preview]) return;
 
-    if (dataset.previewFrameHasID(currentFrameNumber, preview, point.id)) {
+    let alpha = dataset.previewDistance(currentFrameNumber, preview, point.id);
+    if (alpha != null) {
       let dx = point.xs[preview] - point.xs[currentFrameNumber];
       let dy = point.ys[preview] - point.ys[currentFrameNumber];
       let distance = Math.sqrt(dx * dx + dy * dy);
       result[preview] = {
         lineWidth: 30.0 * (distance / scale + 0.2),
-        lineAlpha: 0.8,
+        lineAlpha: alpha,
       };
     } else {
       result[preview] = { lineWidth: 0.0, lineAlpha: 0.0 };
+    }
+  });
+
+  return result;
+}
+
+export function bundledPreviewIntensities(point, dataset, currentFrameNumber) {
+  // This is probably slow because it gets run a lot unnecessarily
+  let result = {};
+
+  Object.keys(point.visibleFlags).forEach((preview) => {
+    if (!point.visibleFlags[preview]) return;
+
+    let distance = dataset.previewDistance(
+      currentFrameNumber,
+      preview,
+      point.id
+    );
+    if (distance == null) {
+      result[preview] = {
+        lineWidth: 0.0,
+        lineAlpha: 0.0,
+      };
+    } else {
+      let componentSize = dataset.previewComponentSize(
+        currentFrameNumber,
+        preview,
+        point.id
+      );
+      result[preview] = {
+        lineWidth: (componentSize / 100.0) * 20.0,
+        lineAlpha: distance / componentSize,
+      };
     }
   });
 

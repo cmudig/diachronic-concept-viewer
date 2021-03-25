@@ -12,10 +12,13 @@ export function scaleCanvas(c, w, h) {
 }
 
 // Function to create new colours for the hidden canvas.
-export function ColorGenerator() {
+export function ColorIDMap() {
   this.nextColor = 1;
 
-  this.next = function () {
+  this.mapping = {};
+  this.reverseMapping = {};
+
+  this._next = function () {
     var ret = [];
     if (this.nextColor < 16777215) {
       ret.push(this.nextColor & 0xff); // R
@@ -25,6 +28,18 @@ export function ColorGenerator() {
     }
     var col = "rgb(" + ret.join(",") + ")";
     return col;
+  };
+
+  this.id = function (id, obj = null) {
+    if (!this.mapping.hasOwnProperty(id)) this.mapping[id] = this._next();
+    if (!this.reverseMapping.hasOwnProperty(id) || obj != null)
+      this.reverseMapping[this.mapping[id]] = obj || id;
+
+    return this.mapping[id];
+  };
+
+  this.obj = function (color) {
+    return this.reverseMapping[color];
   };
 }
 
@@ -89,4 +104,34 @@ export function boundingBox(points) {
 // Pads outward
 export function padExtent(extent, padding) {
   return [extent[0] - padding, extent[1] + padding];
+}
+
+// Transforms the [x, y] point by the given transform 3x3 list (row-major).
+export function transformPoint(transform, point) {
+  return [
+    transform[0][0] * point[0] + transform[0][1] * point[1] + transform[0][2],
+    transform[1][0] * point[0] + transform[1][1] * point[1] + transform[1][2],
+  ];
+}
+
+export function hexToRgb(hex) {
+  var result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
+  return result
+    ? [
+        parseInt(result[1], 16) / 255.0,
+        parseInt(result[2], 16) / 255.0,
+        parseInt(result[3], 16) / 255.0,
+      ]
+    : [0, 0, 0];
+}
+
+export function makeTimeProvider() {
+  var currentTime = 0;
+  let fn = function () {
+    return currentTime;
+  };
+  fn.advance = function (dt) {
+    currentTime += dt;
+  };
+  return fn;
 }

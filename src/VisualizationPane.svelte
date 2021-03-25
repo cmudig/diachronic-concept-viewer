@@ -2,12 +2,12 @@
   import { createEventDispatcher } from "svelte";
   import * as d3 from "d3";
   import SynchronizedScatterplot from "./visualization/SynchronizedScatterplot.svelte";
-  import Legend from "./visualization/Legend.svelte";
-  import { Dataset } from "./visualization/dataset";
+  import Legend from "./visualization/components/Legend.svelte";
+  import { Dataset } from "./visualization/models/dataset";
   import { fade } from "svelte/transition";
 
   import * as Model from "./datamodel";
-  import ScatterplotThumbnail from "./visualization/ScatterplotThumbnail.svelte";
+  import ScatterplotThumbnail from "./visualization/components/ScatterplotThumbnail.svelte";
 
   const dispatch = createEventDispatcher();
 
@@ -107,6 +107,73 @@
   }
 </script>
 
+<div class="vis-container">
+  {#if data != null}
+    <div class="thumbnail-container">
+      <p class="thumbnails-title">MONTHS</p>
+      {#each [...d3.range(data.frameCount)] as i}
+        <div class="thumbnail-item">
+          <ScatterplotThumbnail
+            on:click={() => (currentFrame = i)}
+            on:mouseover={() => (previewFrame = i)}
+            on:mouseout={() => (previewFrame = -1)}
+            isSelected={currentFrame == i}
+            {colorScheme}
+            {data}
+            frame={i}
+          />
+        </div>
+      {/each}
+    </div>
+
+    <div class="scatterplot">
+      <div class="scatterplot-parent">
+        <SynchronizedScatterplot
+          {data}
+          hoverable
+          {colorScheme}
+          {useHalos}
+          frame={currentFrame}
+          {previewFrame}
+          animateTransitions
+          bind:this={canvas}
+          on:colorScale={(e) => (colorScale = e.detail)}
+          on:datahover={onScatterplotHover}
+          on:dataclick={onScatterplotClick}
+        />
+        {#if showLegend}
+          <div
+            class="legend-container"
+            transition:fade
+            on:mouseout={() => {
+              showLegend = false;
+            }}
+          >
+            <Legend {colorScale} type={colorScheme.type || "continuous"} />
+            <p class="small m-2" style="max-width: 300px;">
+              The plot shows a subset of semantic types and filters concepts by
+              confidence in each month. Some concepts may not be visible when
+              selected.
+            </p>
+          </div>
+        {:else}
+          <button
+            class="btn btn-light btn-sm legend-hoverable"
+            on:mouseover={() => {
+              showLegend = true;
+            }}>Legend</button
+          >
+        {/if}
+      </div>
+    </div>
+  {:else if isLoading}
+    <div class="message-container">
+      <p class="small">Loading visualization...</p>
+      <div class="spinner-border text-primary" role="status" />
+    </div>
+  {/if}
+</div>
+
 <style>
   .scatterplot {
     height: 100%;
@@ -169,66 +236,3 @@
     background-color: rgba(225, 225, 225, 0.8);
   }
 </style>
-
-<div class="vis-container">
-  {#if data != null}
-    <div class="thumbnail-container">
-      <p class="thumbnails-title">MONTHS</p>
-      {#each [...d3.range(data.frameCount)] as i}
-        <div class="thumbnail-item">
-          <ScatterplotThumbnail
-            on:click={() => (currentFrame = i)}
-            on:mouseover={() => (previewFrame = i)}
-            on:mouseout={() => (previewFrame = -1)}
-            isSelected={currentFrame == i}
-            {colorScheme}
-            {data}
-            frame={i} />
-        </div>
-      {/each}
-    </div>
-
-    <div class="scatterplot">
-      <div class="scatterplot-parent">
-        <SynchronizedScatterplot
-          {data}
-          hoverable
-          {colorScheme}
-          {useHalos}
-          frame={currentFrame}
-          {previewFrame}
-          animateTransitions
-          bind:this={canvas}
-          on:colorScale={(e) => (colorScale = e.detail)}
-          on:datahover={onScatterplotHover}
-          on:dataclick={onScatterplotClick} />
-        {#if showLegend}
-          <div
-            class="legend-container"
-            transition:fade
-            on:mouseout={() => {
-              showLegend = false;
-            }}>
-            <Legend {colorScale} type={colorScheme.type || 'continuous'} />
-            <p class="small m-2" style="max-width: 300px;">
-              The plot shows a subset of semantic types and filters concepts by
-              confidence in each month. Some concepts may not be visible when
-              selected.
-            </p>
-          </div>
-        {:else}
-          <button
-            class="btn btn-light btn-sm legend-hoverable"
-            on:mouseover={() => {
-              showLegend = true;
-            }}>Legend</button>
-        {/if}
-      </div>
-    </div>
-  {:else if isLoading}
-    <div class="message-container">
-      <p class="small">Loading visualization...</p>
-      <div class="spinner-border text-primary" role="status" />
-    </div>
-  {/if}
-</div>

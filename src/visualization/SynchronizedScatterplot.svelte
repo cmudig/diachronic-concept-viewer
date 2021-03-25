@@ -3,496 +3,249 @@
 <script>
   import { createEventDispatcher, onMount } from "svelte";
   import * as d3 from "d3";
-  import D3Canvas from "./D3Canvas.svelte";
-  import { DatasetManager } from "./data_manager.js";
-  import { Scales } from "./scales";
   import { fade } from "svelte/transition";
   import Icon from "fa-svelte";
   import { faExclamationTriangle } from "@fortawesome/free-solid-svg-icons/faExclamationTriangle";
+  import Scatterplot from "./pixi/Scatterplot.svelte";
+  import PreviewSlider from "./components/PreviewSlider.svelte";
 
   const dispatch = createEventDispatcher();
 
   let container;
 
+  // Props for this element
+  export let backgroundColor = "white";
   export let width = null;
   export let height = null;
-  let actualWidth = null;
-  let actualHeight = null;
-  $: if (!!width) actualWidth = width;
-  else if (!!container) actualWidth = container.clientWidth;
-  $: if (!!height) actualHeight = height;
-  else if (!!container) actualHeight = container.clientHeight;
 
-  export let useHalos = false;
+  // Props passed directly to scatterplot
+  export let padding = 0.3;
+  export let rFactor = 1.0;
+  export let colorScheme = { value: d3.interpolateTurbo };
+  export let animateTransitions = false;
+
+  // Enable/disable interaction
   export let hoverable = false;
   export let thumbnail = false;
 
-  export let rFactor = 1.0;
-  export let colorScheme = { value: d3.interpolateTurbo };
-  let oldColorScheme;
-
-  let colorScale = (c) => c;
-
+  // Frames and previews
   export let frame = 0;
   export let previewFrame = -1; // the frame to preview with translucent lines
-  var prevFrame = -1;
-  var prevPreviewFrame = -1;
+  export let showPreviewControls = false;
+  export let previewProgress = 0.0;
 
+  // Scatterplot state
+  let scalesNeutral = true;
   export let hoveredID = null;
-  export let clickedID = null;
+  export let clickedIDs = [];
+  export let alignedIDs = [];
+  export let filter = new Set();
+  let followingIDs = [];
 
+  // Data control
   export let data = null;
-  let oldData = null;
-  export let animateTransitions = false;
-  var marks = null;
-  let dataManager;
+  export let alignFunction = null;
 
-  let timer;
-  let currentTime = 0;
+  // Thumbnails
+  export let thumbnailsURL = null;
 
+  let scatterplot;
   let warningMessage = "";
-  $: {
-    if (!data) warningMessage = "";
-    else if (
-      !!clickedID &&
-      previewFrame >= 0 &&
-      previewFrame != frame &&
-      !data.atFrame(clickedID, previewFrame)
-    ) {
-      warningMessage =
-        "The selected entity does not appear in the plot for the destination month";
-    } else if (
-      !!clickedID &&
-      (previewFrame < 0 || previewFrame == frame) &&
-      !data.atFrame(clickedID, frame)
-    ) {
-      warningMessage =
-        "The selected entity does not appear in this plot (see legend)";
-    } else {
-      warningMessage = "";
-    }
+
+  // Selection
+
+  var prevClickedIDs = null;
+  $: if (prevClickedIDs != clickedIDs && !!data) {
+    updateSelection();
+    prevClickedIDs = clickedIDs;
+    dispatch("dataclick", clickedIDs);
   }
 
-  // Animate point positions on different frames
-  $: {
-    if (!!dataManager) {
-      if (prevFrame != frame) {
-        updateFrame(frame);
-        prevFrame = frame;
-      }
-    }
-  }
-
-  function updateFrame(newFrame) {
-    dataManager.setFrame(newFrame, animateTransitions);
-    if (!!hoveredID && !data.atFrame(hoveredID, newFrame)) {
-      hideStarGraph(hoveredID);
-      hoveredID = null;
-    } else if (!!hoveredID) {
-      updateStarGraph(hoveredID);
-    }
-    if (!!clickedID && !data.atFrame(clickedID, newFrame)) {
-      hideStarGraph(clickedID);
-      if (isCenteredOnPoint) {
-        showVicinityOfClickedPoint();
-      }
-    } else if (!!clickedID) {
-      updateStarGraph(clickedID);
-
-      if (!isCenteredOnPoint) {
-        showVicinityOfClickedPoint();
-      }
-    }
-
-    if (!!canvas && !animateTransitions) {
-      canvas.draw();
-    }
-  }
-
-  // Animate shadow lines when previewing a frame
-  $: {
-    if (!!dataManager) {
-      if (previewFrame != prevPreviewFrame) {
-        prevPreviewFrame = previewFrame;
-        dataManager.previewFrame(previewFrame, animateTransitions, useHalos);
-        if (!!canvas && !animateTransitions) {
-          canvas.draw();
-        }
-      }
-    }
-  }
-
-  $: if (!!canvas && (oldData != data || oldColorScheme != colorScheme)) {
-    oldData = data;
-    oldColorScheme = colorScheme;
-
-    initializeDataBinding(data);
-  }
-
-  onMount(() => {
-    if (animateTransitions) {
-      timer = d3.timer((elapsed) => {
-        let dt = elapsed - currentTime;
-        currentTime = elapsed;
-        let update = scales.advance(dt);
-        update = (!!marks && marks.advance(dt)) || update;
-        if (update) {
-          canvas.draw();
-        }
+  function updateSelection() {
+    if (clickedIDs.length > 0) {
+      let filteredPoints = new Set();
+      clickedIDs.forEach((clickedID) => {
+        filteredPoints.add(clickedID);
+        d3.range(data.frameCount).forEach((f) => {
+          let neighbors = data.neighborsInFrame(clickedID, f, 25);
+          neighbors.forEach((n) => filteredPoints.add(n));
+          let framePt = data.atFrame(clickedID, f);
+          if (!!framePt && !!framePt.highlightIndexes) {
+            framePt.highlightIndexes.forEach((n) => filteredPoints.add(n));
+          }
+        });
       });
-    }
+      filter = filteredPoints;
 
-    window.addEventListener("resize", handleResize);
-  });
-
-  // Temporary initial value
-  let scales = new Scales([0, 1], [0, 1], [0, 1], [0, 1]);
-
-  var canvas;
-  var hiddenCanvas; // for getting IDs
-
-  var mouseMoveTimeout;
-
-  function onMouseover() {
-    dispatch("mouseover");
-  }
-
-  function onMousedown() {
-    dispatch("mousedown");
-  }
-
-  function onMouseup() {
-    dispatch("mouseup");
-  }
-
-  function onMouseout() {
-    if (thumbnail) {
-      dispatch("mouseout");
-    } else if (hoveredID != null) {
-      hoveredID = null;
-      dispatch("datahover", hoveredID);
-    }
-  }
-
-  function getIDAtPoint(x, y) {
-    if (!dataManager) return null;
-
-    hiddenCanvas.draw();
-    var color = hiddenCanvas.getColorAtPoint(x, y);
-
-    var colKey = "rgb(" + color[0] + "," + color[1] + "," + color[2] + ")";
-    return dataManager.getPointByColorID(colKey);
-  }
-
-  var prevHoverID = null;
-  var prevClickedID = null;
-
-  let starGraphs = {};
-
-  function showStarGraph(id) {
-    if (!!starGraphs[id]) {
-      dataManager.highlightStarGraph(starGraphs[id]).then(
-        () => {},
-        () => {}
-      );
-    } else if (!!data.byID(id)) {
-      let item = data.atFrame(id, frame);
-      if (!item) return;
-      let neighbors = (item.highlightIndexes || []).map((i) => "" + i);
-      starGraphs[id] = dataManager.createStarGraph(id, neighbors);
-      dataManager.highlightStarGraph(starGraphs[id]).then(
-        () => {},
-        () => {}
-      );
-    }
-  }
-
-  function hideStarGraph(id) {
-    if (!!starGraphs[id]) {
-      dataManager.unhighlightStarGraph(starGraphs[id]).then(
-        () => (starGraphs[id] = undefined),
-        () => {}
-      );
-    }
-  }
-
-  function updateStarGraph(id) {
-    if (!!starGraphs[id]) {
-      let item = data.atFrame(id, frame);
-      if (item) {
-        let neighbors = (item.highlightIndexes || []).map((i) => "" + i);
-        dataManager.updateStarGraph(starGraphs[id], neighbors);
-      } else {
-        hideStarGraph(id);
-      }
+      showVicinityOfClickedPoint();
     } else {
-      showStarGraph(id);
+      filter = new Set();
+      followingIDs = [];
     }
   }
 
-  $: if (prevHoverID != hoveredID && !!marks && !!data) {
-    if (prevHoverID != null && prevHoverID != clickedID) {
-      hideStarGraph(prevHoverID);
-    }
-    if (hoveredID != null) {
-      showStarGraph(hoveredID);
-    }
-    prevHoverID = hoveredID;
+  export function selectPoint(pointID, multi = false) {
+    if (!scatterplot) return;
+    scatterplot.selectPoint(pointID, multi);
   }
 
-  $: if (prevClickedID != clickedID && !!marks && !!data) {
-    if (prevClickedID != null) {
-      hideStarGraph(prevClickedID);
-    }
-    if (clickedID != null) {
-      showStarGraph(clickedID);
-    }
-
-    prevClickedID = clickedID;
+  var prevAlignedIDs = null;
+  $: if (prevAlignedIDs != alignedIDs && !!data) {
+    alignToPoints(alignedIDs);
+    prevAlignedIDs = alignedIDs;
   }
 
-  export function selectPoint(pointID) {
-    clickedID = pointID;
-    dispatch("dataclick", clickedID);
-
-    if (!!clickedID && !!data.byID(clickedID)) {
-      // Find the nearest neighbors in all frames and highlight those
-      let filteredPoints = new Set([clickedID]);
-      let highlightIndexes = data.byID(clickedID).highlightIndexes;
-      let allNeighbors = new Set(Object.values(highlightIndexes).flat());
-      // Add another round of neighbors
-      allNeighbors.forEach((n) => {
-        filteredPoints.add(n);
-        let datapt = data.byID(n);
-        if (!datapt) return;
-        let highlightIndexes = datapt.highlightIndexes;
-        Object.values(highlightIndexes)
-          .flat()
-          .forEach((id) => filteredPoints.add(id));
-      });
-      dataManager.filter(filteredPoints);
-
-      if (isCenteredOnPoint) {
-        centerOnClickedPoint();
-      } else {
-        showVicinityOfClickedPoint();
-      }
-
-      /*d3.range(data.frameCount).forEach((f) => {
-        let neighbors = data.neighborsInFrame(clickedID, f, 25);
-        neighbors.forEach((n) => filteredPoints.add(n));
-        let framePt = data.atFrame(clickedID, f);
-        if (!!framePt && !!framePt.highlightIndexes) {
-          framePt.highlightIndexes.forEach((n) => filteredPoints.add(n));
-        }
-      });*/
-    } else {
-      dataManager.clearFilter();
-      isCenteredOnPoint = false;
-    }
-  }
-
-  function onMousemove(info) {
-    if (!hoverable) return;
-
-    // Get mouse positions from the main canvas.
-    var e = info.detail;
-    var rect = e.target.getBoundingClientRect();
-    var mouseX = e.clientX - rect.left; //x position within the element.
-    var mouseY = e.clientY - rect.top; //y position within the element.
-    var newHoveredID = getIDAtPoint(mouseX, mouseY);
-
-    if (newHoveredID != hoveredID) {
-      hoveredID = newHoveredID;
-
-      dispatch("datahover", hoveredID);
-    }
-  }
-
-  function onClick(info) {
-    if (!hoverable) return;
-
-    // Get mouse positions from the main canvas.
-    var e = info.detail;
-    var rect = e.target.getBoundingClientRect();
-    var mouseX = e.clientX - rect.left; //x position within the element.
-    var mouseY = e.clientY - rect.top; //y position within the element.
-    var idx = getIDAtPoint(mouseX, mouseY);
-
-    selectPoint(idx);
-  }
-
+  // Reset button
   let showResetButton = false;
+  $: showResetButton =
+    !scalesNeutral || clickedIDs.length > 0 || alignedIDs.length > 0;
 
-  let showCenterButton = false;
-  let isCenteredOnPoint = false;
-  $: showCenterButton = clickedID != null;
-  let centeredText = "";
-  $: centeredText = getCenteredText(isCenteredOnPoint, clickedID);
+  // Align button
+  export let allowAlignment = true;
+  let showAlignmentButton = false;
+  $: showAlignmentButton = allowAlignment && clickedIDs.length > 0;
 
-  function getCenteredText(isCentered, pointID) {
-    if (pointID == null || thumbnail) {
-      return "";
-    }
+  let alignedToSelection = false;
+  $: alignedToSelection =
+    alignedIDs.length > 0 &&
+    JSON.stringify(alignedIDs) ==
+      JSON.stringify(getVicinityOfPoints(clickedIDs));
+
+  let alignmentText = "";
+  $: alignmentText = getAlignmentText(
+    alignedIDs,
+    clickedIDs,
+    alignedToSelection
+  );
+
+  function _describePoint(pointID) {
     let datapt = data.byID(pointID);
     if (!datapt) return "";
     let detailMessage = datapt.hoverText;
     if (!!detailMessage) detailMessage = " - " + detailMessage;
     else detailMessage = "";
+    return `${pointID}${detailMessage}`;
+  }
 
-    if (isCentered) {
-      return `Centered on <strong>${pointID}${detailMessage}</strong>`;
+  function _othersMessage(pointIDs) {
+    return pointIDs.length > 1 ? ` and ${pointIDs.length - 1} others` : "";
+  }
+
+  function getAlignmentText(alignPoints, clickPoints, alignedToSelectedPoints) {
+    if ((alignPoints.length == 0 && clickPoints.length == 0) || thumbnail) {
+      return "";
     }
-    return `Showing vicinity of <strong>${pointID}${detailMessage}</strong>`;
-  }
 
-  function rescale() {
-    isCenteredOnPoint = false;
-    if (!!dataManager && !!canvas) {
-      dataManager.rescale();
-      canvas.draw();
+    if (clickPoints.length == 0 && alignPoints.length > 0) {
+      return `Aligned to <strong>${_describePoint(
+        alignPoints[0]
+      )}</strong>${_othersMessage(alignPoints)}`;
+    } else if (clickPoints.length > 0 && alignPoints.length == 0) {
+      return `<strong>${_describePoint(
+        clickPoints[0]
+      )}</strong>${_othersMessage(clickPoints)} selected`;
     }
-  }
 
-  function resetAxisScales() {
-    selectPoint(null);
-    scales.resetZoom();
-    isCenteredOnPoint = false;
-    if (!!dataManager && !!canvas) {
-      dataManager.rescale();
-      canvas.draw();
-    }
-  }
+    let selectionBase =
+      `<strong>${_describePoint(clickPoints[0])}</strong>` +
+      `${_othersMessage(clickPoints)} selected`;
+    if (alignedToSelectedPoints) return selectionBase + " (aligned)";
 
-  function centerOnClickedPoint() {
-    let datapt = data.atFrame(clickedID, frame);
-
-    let neighbors = datapt.highlightIndexes;
-    scales.centerOn(
-      dataManager.marks.getMarkByID(clickedID),
-      [clickedID, ...neighbors]
-        .map((pt) => dataManager.marks.getMarkByID(pt))
-        .filter((mark) => !!mark)
-    );
-    isCenteredOnPoint = true;
-  }
-
-  function showVicinityOfClickedPoint() {
-    isCenteredOnPoint = false;
-
-    scales.zoomTo(
-      Array.from(dataManager.filterVisiblePoints)
-        .map((pt) => dataManager.marks.getMarkByID(pt))
-        .filter((mark) => !!mark)
+    return (
+      selectionBase +
+      `, aligned to ${alignPoints.length} ` +
+      `point${alignPoints.length > 1 ? "s" : ""}`
     );
   }
 
-  // Updating the data bindings
-  function initializeDataBinding(data) {
-    if (!data) {
-      dataManager = null;
-      return;
-    }
-    dataManager = new DatasetManager(
-      data,
-      // These preserve the reference to this object's scales, so the functions' behavior
-      // will automatically change as the scales change
-      (c) => colorScale(c),
-      (x) => scales.scaleX(x),
-      (y) => scales.scaleY(y),
-      frame
-    );
-    marks = dataManager.marks;
+  async function alignToPoints(pointIDs) {
+    if (!alignFunction) return;
 
-    let colorType = colorScheme.type || "continuous";
-    if (colorType == "categorical") {
-      colorScale = d3
-        .scaleOrdinal(colorScheme.value)
-        .domain(data.getColorExtent(true));
+    let transformations = await alignFunction(frame, pointIDs);
+    if (!!transformations) {
+      data.transform(transformations);
+      scatterplot.animateDatasetUpdate();
+      dispatch("align", alignedIDs);
+    }
+  }
+
+  export function reset() {
+    clickedIDs = [];
+    alignedIDs = [];
+    followingIDs = [];
+    scatterplot.reset();
+  }
+
+  function getVicinityOfPoints(pointIDs) {
+    let vicinity;
+    if (pointIDs.length >= 3) {
+      // There are enough points to use them as-is
+      vicinity = pointIDs;
     } else {
-      colorScale = d3
-        .scaleSequential(colorScheme.value)
-        .domain(data.getColorExtent());
+      // Use the neighbors to help with the alignment
+      let filteredPoints = new Set(pointIDs);
+      pointIDs.forEach((id) => {
+        let highlightIndexes = data.byID(id).highlightIndexes;
+        let allNeighbors = new Set(Object.values(highlightIndexes).flat());
+        allNeighbors.forEach((n) => filteredPoints.add(n));
+      });
+      vicinity = Array.from(filteredPoints);
     }
-
-    dispatch("colorScale", colorScale);
-
-    // Initialize scales
-    scales = new Scales(
-      data.getXExtent(),
-      data.getYExtent(),
-      [canvas.margin.left, actualWidth - canvas.margin.right],
-      [canvas.margin.top, actualHeight - canvas.margin.bottom],
-      0.5
-    );
-
-    scales.onUpdate(() => {
-      showResetButton = !scales.isNeutral() || clickedID != null;
-    });
+    return vicinity;
   }
 
-  function handleResize() {
-    actualWidth = container.clientWidth;
-    actualHeight = container.clientHeight;
+  export function showVicinityOfClickedPoint() {
+    followingIDs = getVicinityOfPoints(clickedIDs);
   }
 </script>
 
 <div
   style="width: {width != null ? `${width}px` : '100%'}; height: {height != null
     ? `${height}px`
-    : '100%'};"
+    : '100%'}; background-color: {backgroundColor};"
   id="container"
   bind:this={container}
 >
-  <D3Canvas
+  <Scatterplot
+    bind:this={scatterplot}
+    {padding}
+    {width}
+    {height}
+    {hoverable}
     {thumbnail}
-    width={actualWidth}
-    height={actualHeight}
-    data={marks}
-    halosEnabled={useHalos}
-    pan={!thumbnail}
-    zoom={!thumbnail}
     {rFactor}
+    {colorScheme}
+    {animateTransitions}
+    {thumbnailsURL}
+    bind:frame
+    bind:previewFrame
+    bind:previewProgress
+    bind:clickedIDs
+    bind:hoveredID
+    bind:alignedIDs
+    bind:followingIDs
+    bind:filter
+    bind:data
+    bind:scalesNeutral
+    on:mouseover
+    on:mouseout
+    on:mousedown
+    on:mouseup
+    on:datahover
+    on:dataclick
     on:click
-    on:mousemove={onMousemove}
-    on:mouseover={onMouseover}
-    on:mousedown={onMousedown}
-    on:mouseup={onMouseup}
-    on:mouseout={onMouseout}
-    on:click={onClick}
-    on:scale={(e) => {
-      scales.scaleBy(e.detail.ds, e.detail.centerPoint);
-      rescale();
-    }}
-    on:translate={(e) => {
-      scales.translateBy(e.detail.x, e.detail.y);
-      rescale();
-    }}
-    bind:this={canvas}
   />
-  {#if hoverable}
-    <D3Canvas
-      width={actualWidth}
-      height={actualHeight}
-      data={marks}
-      bind:this={hiddenCanvas}
-      {rFactor}
-      hidden
-    />
-  {/if}
   {#if !thumbnail}
     <div id="button-panel">
-      {#if showCenterButton}
+      {#if showAlignmentButton}
         <button
-          transition:fade={{ duration: 100 }}
-          disabled={!data.atFrame(clickedID, frame)}
+          disabled={alignedToSelection}
           type="button"
           class="btn btn-primary btn-sm"
-          on:click|preventDefault={!isCenteredOnPoint
-            ? centerOnClickedPoint
-            : showVicinityOfClickedPoint}
+          on:click|preventDefault={() =>
+            (alignedIDs = getVicinityOfPoints(clickedIDs))}
         >
-          {#if !isCenteredOnPoint}Center{:else}Vicinity{/if}</button
+          Align</button
         >
       {/if}
       {#if showResetButton}
@@ -500,19 +253,52 @@
           transition:fade={{ duration: 100 }}
           type="button"
           class="btn btn-dark btn-sm"
-          on:click|preventDefault={resetAxisScales}>Reset</button
+          on:click|preventDefault={(e) => {
+            reset();
+            dispatch("reset");
+          }}>Reset</button
         >
       {/if}
     </div>
     <div id="message-panel">
-      {#if !!centeredText}
-        {@html centeredText}
+      {#if !!alignmentText}
+        {@html alignmentText}
+        {#if alignedIDs.length > 0 && !alignedToSelection}
+          - <a
+            on:click|preventDefault={() => (clickedIDs = alignedIDs)}
+            href="#">Select alignment anchors</a
+          >
+        {/if}
       {/if}
     </div>
     {#if warningMessage.length > 0}
-      <div id="warning-panel" transition:fade={{ duration: 100 }}>
+      <div id="warning-panel">
         <Icon icon={faExclamationTriangle} />
         {warningMessage}
+      </div>
+    {/if}
+    {#if showPreviewControls && previewFrame != frame && previewFrame != -1}
+      <div id="preview-panel" transition:fade={{ duration: 100 }}>
+        <!-- <div>
+          Showing {data.frameLabels[frame]} &rsaquo; {data.frameLabels[
+            previewFrame
+          ]}
+        </div>
+        <button
+          type="button"
+          class="btn btn-secondary btn-sm ml-2 mr-1 mb-0"
+          on:click|preventDefault={(e) => {
+            dispatch("cancelPreview");
+          }}>Cancel</button
+        >
+        <button
+          type="button"
+          class="btn btn-primary btn-sm mb-0"
+          on:click|preventDefault={(e) => {
+            dispatch("advancePreview");
+          }}>Go</button
+        > -->
+        <PreviewSlider width={240} bind:progress={previewProgress} />
       </div>
     {/if}
   {/if}
@@ -522,6 +308,8 @@
   #container {
     position: relative;
     overflow: hidden;
+    transition: background-color 0.5s linear;
+    border-radius: 8px;
   }
   #button-panel {
     position: absolute;
@@ -534,6 +322,8 @@
     left: 12px;
     font-size: small;
     color: #555;
+    background-color: rgba(255, 255, 255, 0.8);
+    border-radius: 4px;
   }
   #warning-panel {
     position: absolute;
@@ -544,5 +334,17 @@
     background-color: goldenrod;
     color: white;
     font-size: small;
+  }
+  #preview-panel {
+    position: absolute;
+    bottom: 0;
+    right: 0;
+    padding: 12px;
+    font-size: small;
+    color: #555;
+    display: flex;
+    align-items: center;
+    background-color: rgba(255, 255, 255, 0.8);
+    border-radius: 4px;
   }
 </style>
