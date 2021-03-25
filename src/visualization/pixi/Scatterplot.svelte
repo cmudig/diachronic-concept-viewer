@@ -329,6 +329,8 @@
     var mouseY = event.clientY - rect.top; //y position within the element.
     var el = getElementAtPoint(mouseX, mouseY);
     stateManager.selectElement(el, event.shiftKey);
+
+    scatterplot.clearInteractionMap();
   }
 
   // Selection
@@ -419,6 +421,7 @@
     bind:frame
     bind:previewFrame
     bind:previewProgress
+    bind:filter
   />
   <ScatterplotViewportState
     bind:this={viewportManager}

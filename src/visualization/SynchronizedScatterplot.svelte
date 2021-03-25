@@ -52,6 +52,28 @@
   let scatterplot;
   let warningMessage = "";
 
+  $: {
+    if (!data) warningMessage = "";
+    else if (
+      clickedIDs.length == 1 &&
+      previewFrame >= 0 &&
+      previewFrame != frame &&
+      !data.atFrame(clickedIDs[0], previewFrame)
+    ) {
+      warningMessage =
+        "The selected entity does not appear in the plot for the destination month";
+    } else if (
+      clickedIDs.length == 1 &&
+      (previewFrame < 0 || previewFrame == frame) &&
+      !data.atFrame(clickedIDs[0], frame)
+    ) {
+      warningMessage =
+        "The selected entity does not appear in this plot (see legend)";
+    } else {
+      warningMessage = "";
+    }
+  }
+
   // Selection
 
   var prevClickedIDs = null;

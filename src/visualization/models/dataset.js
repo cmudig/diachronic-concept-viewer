@@ -146,6 +146,7 @@ export function Dataset(rawData, colorKey, r = 4.0) {
         points[id].highlightIndexes[f] = el.highlight.map((h) => "" + h);
         points[id].visibleFlags[f] = true;
         points[id].rs[f] = r;
+        if (!!el.hoverText) points[id].label = { text: el.hoverText };
       });
     });
 

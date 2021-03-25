@@ -348,6 +348,7 @@
   var prevHoverID = null;
   var prevSelectedIDs = [];
   var prevAlignedIDs = [];
+  var prevFilter = [];
   let starGraphPool;
   let previewLinePool;
   let selectionDecorationPool;
@@ -370,6 +371,15 @@
     );
     prevHoverID = hoveredID;
     prevSelectedIDs = selectedIDs;
+  }
+
+  $: if (!!marks && prevFilter != filter) {
+    marks.animateComputed("r", interpolateTo, defaultDuration);
+    marks.animateComputed("alpha", interpolateTo, defaultDuration);
+    updateAlignmentDecorations();
+    updateStarGraphVisibility();
+    updateLabelVisibility();
+    prevFilter = filter;
   }
 
   export function selectElement(element, multi) {
@@ -468,6 +478,11 @@
         let graph = new DecorationStarGraph(
           marks.getMarkByID(nodeID),
           info.linkedNodeIDs
+            .filter((id) => {
+              let datapt = data.byID(id);
+              if (!datapt) return false;
+              return !!datapt.visibleFlags[frame];
+            })
             .map((id) => marks.getMarkByID(id))
             .filter((m) => !!m),
           SelectionOutlineZIndex,
@@ -535,7 +550,13 @@
       create: (nodeID) => {
         let mark = marks.getMarkByID(nodeID);
         let dataItem = data.byID(nodeID);
-        if (!mark || !dataItem || !dataItem.label) return null;
+        if (
+          !mark ||
+          !dataItem ||
+          !dataItem.label ||
+          !dataItem.visibleFlags[frame]
+        )
+          return null;
         if (!!dataItem.label.text) {
           return new Decoration("text", [mark], {
             color: "black",

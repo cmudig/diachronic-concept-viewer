@@ -171,7 +171,10 @@ const HiddenFragmentShader = `
     varying float vAlpha;
 
     void main () {
-      float r = 0.0, delta = 0.0, alpha = 1.0;
+      if (vAlpha < 0.001) {
+        discard;
+      }
+      float r = 0.0, delta = 0.0;
       vec2 cxy = 2.0 * gl_PointCoord - 1.0;
       r = dot(cxy, cxy);
       if (r > 1.0) {
