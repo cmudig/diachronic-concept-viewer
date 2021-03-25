@@ -1,3 +1,5 @@
+<svelte:options accessors />
+
 <script>
   import { createEventDispatcher, onMount } from "svelte";
   import * as d3 from "d3";
@@ -368,7 +370,9 @@
     let neighbors = datapt.highlightIndexes;
     scales.centerOn(
       dataManager.marks.getMarkByID(clickedID),
-      [clickedID, ...neighbors].map((pt) => dataManager.marks.getMarkByID(pt))
+      [clickedID, ...neighbors]
+        .map((pt) => dataManager.marks.getMarkByID(pt))
+        .filter((mark) => !!mark)
     );
     isCenteredOnPoint = true;
   }
@@ -433,6 +437,87 @@
   }
 </script>
 
+<div
+  style="width: {width != null ? `${width}px` : '100%'}; height: {height != null
+    ? `${height}px`
+    : '100%'};"
+  id="container"
+  bind:this={container}
+>
+  <D3Canvas
+    {thumbnail}
+    width={actualWidth}
+    height={actualHeight}
+    data={marks}
+    halosEnabled={useHalos}
+    pan={!thumbnail}
+    zoom={!thumbnail}
+    {rFactor}
+    on:click
+    on:mousemove={onMousemove}
+    on:mouseover={onMouseover}
+    on:mousedown={onMousedown}
+    on:mouseup={onMouseup}
+    on:mouseout={onMouseout}
+    on:click={onClick}
+    on:scale={(e) => {
+      scales.scaleBy(e.detail.ds, e.detail.centerPoint);
+      rescale();
+    }}
+    on:translate={(e) => {
+      scales.translateBy(e.detail.x, e.detail.y);
+      rescale();
+    }}
+    bind:this={canvas}
+  />
+  {#if hoverable}
+    <D3Canvas
+      width={actualWidth}
+      height={actualHeight}
+      data={marks}
+      bind:this={hiddenCanvas}
+      {rFactor}
+      hidden
+    />
+  {/if}
+  {#if !thumbnail}
+    <div id="button-panel">
+      {#if showCenterButton}
+        <button
+          transition:fade={{ duration: 100 }}
+          disabled={!data.atFrame(clickedID, frame)}
+          type="button"
+          class="btn btn-primary btn-sm"
+          on:click|preventDefault={!isCenteredOnPoint
+            ? centerOnClickedPoint
+            : showVicinityOfClickedPoint}
+        >
+          {#if !isCenteredOnPoint}Center{:else}Vicinity{/if}</button
+        >
+      {/if}
+      {#if showResetButton}
+        <button
+          transition:fade={{ duration: 100 }}
+          type="button"
+          class="btn btn-dark btn-sm"
+          on:click|preventDefault={resetAxisScales}>Reset</button
+        >
+      {/if}
+    </div>
+    <div id="message-panel">
+      {#if !!centeredText}
+        {@html centeredText}
+      {/if}
+    </div>
+    {#if warningMessage.length > 0}
+      <div id="warning-panel" transition:fade={{ duration: 100 }}>
+        <Icon icon={faExclamationTriangle} />
+        {warningMessage}
+      </div>
+    {/if}
+  {/if}
+</div>
+
 <style>
   #container {
     position: relative;
@@ -461,76 +546,3 @@
     font-size: small;
   }
 </style>
-
-<svelte:options accessors />
-
-<div
-  style="width: {width != null ? `${width}px` : '100%'}; height: {height != null ? `${height}px` : '100%'};"
-  id="container"
-  bind:this={container}>
-  <D3Canvas
-    {thumbnail}
-    width={actualWidth}
-    height={actualHeight}
-    data={marks}
-    halosEnabled={useHalos}
-    pan={!thumbnail}
-    zoom={!thumbnail}
-    {rFactor}
-    on:click
-    on:mousemove={onMousemove}
-    on:mouseover={onMouseover}
-    on:mousedown={onMousedown}
-    on:mouseup={onMouseup}
-    on:mouseout={onMouseout}
-    on:click={onClick}
-    on:scale={(e) => {
-      scales.scaleBy(e.detail.ds, e.detail.centerPoint);
-      rescale();
-    }}
-    on:translate={(e) => {
-      scales.translateBy(e.detail.x, e.detail.y);
-      rescale();
-    }}
-    bind:this={canvas} />
-  {#if hoverable}
-    <D3Canvas
-      width={actualWidth}
-      height={actualHeight}
-      data={marks}
-      bind:this={hiddenCanvas}
-      {rFactor}
-      hidden />
-  {/if}
-  {#if !thumbnail}
-    <div id="button-panel">
-      {#if showCenterButton}
-        <button
-          transition:fade={{ duration: 100 }}
-          disabled={!data.atFrame(clickedID, frame)}
-          type="button"
-          class="btn btn-primary btn-sm"
-          on:click|preventDefault={!isCenteredOnPoint ? centerOnClickedPoint : showVicinityOfClickedPoint}>
-          {#if !isCenteredOnPoint}Center{:else}Vicinity{/if}</button>
-      {/if}
-      {#if showResetButton}
-        <button
-          transition:fade={{ duration: 100 }}
-          type="button"
-          class="btn btn-dark btn-sm"
-          on:click|preventDefault={resetAxisScales}>Reset</button>
-      {/if}
-    </div>
-    <div id="message-panel">
-      {#if !!centeredText}
-        {@html centeredText}
-      {/if}
-    </div>
-    {#if warningMessage.length > 0}
-      <div id="warning-panel" transition:fade={{ duration: 100 }}>
-        <Icon icon={faExclamationTriangle} />
-        {warningMessage}
-      </div>
-    {/if}
-  {/if}
-</div>
