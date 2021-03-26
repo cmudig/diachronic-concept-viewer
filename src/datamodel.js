@@ -107,7 +107,7 @@ export async function getAllEntities() {
  * @return An object with the following keys:
  *   "firstName": name of the first concept
  *   "secondName": name of the second concept
- *   "similarities": an object keyed by frame number whose values are objects
+ *   "similarities": an array whose values are objects
  *      that contain the following keys:
  *    - "label": The label for the frame
  *    - "meanSimilarity": A floating point value indicating the similarity
