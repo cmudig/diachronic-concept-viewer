@@ -104,15 +104,18 @@ export async function getAllEntities() {
  * @param firstID the CUI of the first concept
  * @param secondID the CUI of the second concept
  *
- * @return An object with the following keys:
+ * @return An object with a 'result' object containing the following keys:
  *   "firstName": name of the first concept
  *   "secondName": name of the second concept
- *   "similarities": an object keyed by frame number whose values are objects
+ *   "similarities": an array whose values are objects
  *      that contain the following keys:
  *    - "label": The label for the frame
  *    - "meanSimilarity": A floating point value indicating the similarity
  *    - "stdSimilarity": A floating point value for the standard deviation of
  *      similarity at this point
+ *  The object can also contain a 'progress' object if 'result' is null. The
+ *  progress object should include a 'progress' key (0-1 scale) and a
+ *  'progressMessage' key with a string describing the current activity.
  */
 export async function getPairwiseSimilarity(firstID, secondID) {
   let result = await fetch(`/pairwise/${firstID}/${secondID}`);
