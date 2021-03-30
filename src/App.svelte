@@ -40,6 +40,99 @@
   }
 </script>
 
+<nav class="navbar navbar-dark navbar-expand-lg bg-dark">
+  <button
+    class="navbar-toggler"
+    type="button"
+    data-toggle="collapse"
+    data-target="#navbarNav"
+    aria-controls="navbarNav"
+    aria-expanded="false"
+    aria-label="Toggle navigation"
+  >
+    <span class="navbar-toggler-icon" />
+  </button>
+  <div id="navbar-header" class="navbar-element navbar-brand mr-4">
+    <img
+      id="navbar-logo"
+      style="height: 38px; display: inline;"
+      src="/static/images/text-essence-logo-white.svg"
+      alt="Text Essence"
+    />
+    COVID Diachronic Concept Embeddings
+  </div>
+  <div class="collapse navbar-collapse" id="navbarNav">
+    <ul class="navbar-nav">
+      <li class="nav-item">
+        <a
+          class="nav-link"
+          class:active={visibleView == "main"}
+          href="#"
+          on:click|preventDefault={(e) => (visibleView = "main")}>Browse</a
+        >
+      </li>
+      <li class="nav-item">
+        <a
+          class="nav-link"
+          class:active={visibleView == "detail"}
+          href="#"
+          on:click|preventDefault={(e) => (visibleView = "detail")}>Inspect</a
+        >
+      </li>
+      <li class="nav-item">
+        <a
+          class="nav-link"
+          class:active={visibleView == "comparison"}
+          href="#"
+          on:click|preventDefault={(e) => (visibleView = "comparison")}
+          >Compare</a
+        >
+      </li>
+    </ul>
+  </div>
+  <Autocomplete
+    options={searchItems}
+    right
+    on:change={(e) => selectPoint(e.detail)}
+  />
+</nav>
+<main>
+  <div class="main-view-container">
+    <div class:invisible-left={visibleView != "main"} class="page-container">
+      <MainView
+        bind:selectedID
+        on:detail={(e) => showDetailsAboutPoint(e.detail)}
+        on:compare={(e) =>
+          startComparison(e.detail.firstID, e.detail.comparisonIDs)}
+      />
+    </div>
+    <div
+      class:invisible-left={visibleView == "comparison"}
+      class:invisible-right={visibleView == "main"}
+      class="page-container scrollable"
+    >
+      <DetailView
+        entityID={selectedID}
+        on:detail={(e) => showDetailsAboutPoint(e.detail)}
+        on:compare={(e) =>
+          startComparison(e.detail.firstID, e.detail.comparisonIDs)}
+      />
+    </div>
+    <div
+      class:invisible-right={visibleView != "comparison"}
+      class="page-container"
+    >
+      <ComparisonView
+        bind:this={comparisonView}
+        firstID={firstComparisonID}
+        {comparisonIDs}
+        options={searchItems}
+        on:detail={(e) => showDetailsAboutPoint(e.detail)}
+      />
+    </div>
+  </div>
+</main>
+
 <style>
   .navbar {
     z-index: 10;
@@ -91,82 +184,3 @@
     transition: transform 0.6s ease-in-out, opacity 0.6s linear;
   }
 </style>
-
-<nav class="navbar navbar-dark navbar-expand-lg bg-dark">
-  <button
-    class="navbar-toggler"
-    type="button"
-    data-toggle="collapse"
-    data-target="#navbarNav"
-    aria-controls="navbarNav"
-    aria-expanded="false"
-    aria-label="Toggle navigation">
-    <span class="navbar-toggler-icon" />
-  </button>
-  <div id="navbar-header" class="navbar-element navbar-brand mr-4">
-    <img
-      id="navbar-logo"
-      style="height: 38px; display: inline;"
-      src="/static/images/text-essence-logo-white.svg"
-      alt="Text Essence" />
-    COVID Diachronic Concept Embeddings
-  </div>
-  <div class="collapse navbar-collapse" id="navbarNav">
-    <ul class="navbar-nav">
-      <li class="nav-item">
-        <a
-          class="nav-link"
-          class:active={visibleView == 'main'}
-          href="#"
-          on:click|preventDefault={(e) => (visibleView = 'main')}>Browse</a>
-      </li>
-      <li class="nav-item">
-        <a
-          class="nav-link"
-          class:active={visibleView == 'detail'}
-          href="#"
-          on:click|preventDefault={(e) => (visibleView = 'detail')}>Inspect</a>
-      </li>
-      <li class="nav-item">
-        <a
-          class="nav-link"
-          class:active={visibleView == 'comparison'}
-          href="#"
-          on:click|preventDefault={(e) => (visibleView = 'comparison')}>Compare</a>
-      </li>
-    </ul>
-  </div>
-  <Autocomplete
-    options={searchItems}
-    right
-    on:change={(e) => selectPoint(e.detail)} />
-</nav>
-<main>
-  <div class="main-view-container">
-    <div class:invisible-left={visibleView != 'main'} class="page-container">
-      <MainView
-        bind:selectedID
-        on:detail={(e) => showDetailsAboutPoint(e.detail)}
-        on:compare={(e) => startComparison(e.detail.firstID, e.detail.comparisonIDs)} />
-    </div>
-    <div
-      class:invisible-left={visibleView == 'comparison'}
-      class:invisible-right={visibleView == 'main'}
-      class="page-container scrollable">
-      <DetailView
-        entityID={selectedID}
-        on:detail={(e) => showDetailsAboutPoint(e.detail)}
-        on:compare={(e) => startComparison(e.detail.firstID, e.detail.comparisonIDs)} />
-    </div>
-    <div
-      class:invisible-right={visibleView != 'comparison'}
-      class="page-container">
-      <ComparisonView
-        bind:this={comparisonView}
-        firstID={firstComparisonID}
-        {comparisonIDs}
-        options={searchItems}
-        on:detail={(e) => showDetailsAboutPoint(e.detail)} />
-    </div>
-  </div>
-</main>

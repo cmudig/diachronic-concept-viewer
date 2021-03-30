@@ -303,6 +303,7 @@ export function Dataset(rawData, colorKey, r = 4.0) {
 
   // Gets the IDs of
   this.neighborsInFrame = function (pointID, frame, k) {
+    if (!this.byID(pointID).visibleFlags[frame]) return [];
     return this.neighborTrees[frame]
       .nearest(pointID, k)
       .map((point) => point.id);

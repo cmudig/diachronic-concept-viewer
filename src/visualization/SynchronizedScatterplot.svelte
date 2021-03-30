@@ -54,24 +54,32 @@
 
   $: {
     if (!data) warningMessage = "";
-    else if (
-      clickedIDs.length == 1 &&
-      previewFrame >= 0 &&
-      previewFrame != frame &&
-      !data.atFrame(clickedIDs[0], previewFrame)
-    ) {
-      warningMessage =
-        "The selected entity does not appear in the plot for the destination month";
-    } else if (
-      clickedIDs.length == 1 &&
-      (previewFrame < 0 || previewFrame == frame) &&
-      !data.atFrame(clickedIDs[0], frame)
-    ) {
-      warningMessage =
-        "The selected entity does not appear in this plot (see legend)";
-    } else {
+    else if (clickedIDs.length > 0) {
       warningMessage = "";
-    }
+      if (previewFrame >= 0 && previewFrame != frame) {
+        let unavailable = countUnavailablePoints(clickedIDs, previewFrame);
+        if (unavailable > 0) {
+          if (clickedIDs.length > 1)
+            warningMessage = `${unavailable} of ${clickedIDs.length} entities do not appear in the plot for the destination month`;
+          else
+            warningMessage =
+              "The selected entity does not appear in the plot for the destination month";
+        }
+      } else {
+        let unavailable = countUnavailablePoints(clickedIDs, frame);
+        if (unavailable > 0) {
+          if (clickedIDs.length > 1)
+            warningMessage = `${unavailable} of ${clickedIDs.length} entities do not appear in this plot (see legend)`;
+          else
+            warningMessage =
+              "The selected entity does not appear in this plot (see legend)";
+        }
+      }
+    } else warningMessage = "";
+  }
+
+  function countUnavailablePoints(ids, inFrame) {
+    return ids.reduce((tally, id) => tally + !data.atFrame(id, inFrame), 0);
   }
 
   // Selection
@@ -104,11 +112,6 @@
       filter = new Set();
       followingIDs = [];
     }
-  }
-
-  export function selectPoint(pointID, multi = false) {
-    if (!scatterplot) return;
-    scatterplot.selectPoint(pointID, multi);
   }
 
   var prevAlignedIDs = null;
@@ -207,7 +210,9 @@
       // Use the neighbors to help with the alignment
       let filteredPoints = new Set(pointIDs);
       pointIDs.forEach((id) => {
-        let highlightIndexes = data.byID(id).highlightIndexes;
+        let point = data.byID(id);
+        if (!point) return;
+        let highlightIndexes = point.highlightIndexes;
         let allNeighbors = new Set(Object.values(highlightIndexes).flat());
         allNeighbors.forEach((n) => filteredPoints.add(n));
       });

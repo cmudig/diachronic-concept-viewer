@@ -27,7 +27,6 @@
       isLoading = false;
       info = results[0];
       frameLabels = results[1];
-      console.log(results);
       updateTables();
       updateConfidencePlot();
     });
@@ -108,6 +107,180 @@
     definitionPreview = "";
   }
 </script>
+
+<div id="info_panel" class="container">
+  {#if isLoading || !entityID}
+    <div class="message-container">
+      {#if !entityID}
+        <div class="no-selection-message">
+          Search for a concept above or select one in the Browse view.
+        </div>
+      {:else}
+        <div class="spinner-border text-primary" role="status">
+          <span class="sr-only">Loading...</span>
+        </div>
+      {/if}
+    </div>
+  {:else if !!info}
+    <h2 class="entity-title pb-4">
+      {@html title}
+    </h2>
+    <div class="row pb-4">
+      <div class="col-md-5" id="termListPanel">
+        <h4>Concept Info</h4>
+        {#if !!info.definitions && info.definitions.length > 0}
+          <p class="mb-1"><em>Definitions:</em></p>
+          {#if showDefinitionExpandButton && definitionsExpanded}
+            <div class="definition-container">
+              {#each info.definitions as definition}
+                <p class="definition">
+                  {@html definition}
+                </p>
+              {/each}
+              <a
+                href="#"
+                on:click|preventDefault={() => (definitionsExpanded = false)}
+                >Show less</a
+              >
+            </div>
+          {:else}
+            <p class="definition">
+              {@html definitionPreview}
+              {#if showDefinitionExpandButton}
+                <a
+                  href="#"
+                  on:click|preventDefault={() => (definitionsExpanded = true)}
+                  >Show more</a
+                >
+              {/if}
+            </p>
+          {/if}
+        {/if}
+        <p class="mb-1"><em>Other terms:</em></p>
+        <ul>
+          {#each info.otherTerms as term}
+            <li>{term}</li>
+          {/each}
+        </ul>
+      </div>
+      <div class="col-md-7" id="confidencePanel">
+        <h4>Embedding Confidence</h4>
+        <FrameComparisonPlot
+          height={280}
+          data={confidenceData}
+          frameField="Date"
+          yField="Confidence"
+          {frameLabels}
+        />
+      </div>
+    </div>
+
+    <h4 class="pb-2">Nearest Neighbors</h4>
+    <div class="tables_panel row">
+      {#each tables as table}
+        <div
+          class="{neighborColClass} nn_table"
+          class:low-confidence-table={table.isLowConfidence}
+        >
+          <h5>{table.title}</h5>
+          <p>
+            Confidence:
+            {table.confidence.toFixed(3)}
+            {#if table.isLowConfidence}
+              <span class="warning-label"
+                ><Icon icon={faExclamationTriangle} />
+                Low</span
+              >
+            {/if}
+          </p>
+          <table class="table table-hover">
+            {#if table.neighbors.length == 0}
+              <tbody>
+                <tr>
+                  <td class="no_data_cell" colspan="2" rowspan={numNeighbors}>
+                    No data
+                  </td>
+                </tr>
+              </tbody>
+            {:else}
+              <tbody>
+                {#each table.neighbors as neighbor}
+                  <tr>
+                    <td
+                      class:sympathetic-highlight={hoveringID == neighbor.id &&
+                        hoveringCell != neighbor.uniqueID}
+                      on:mouseover={() => {
+                        hoveringCell = neighbor.uniqueID;
+                        hoveringID = neighbor.id;
+                      }}
+                      on:mouseleave={() => {
+                        hoveringCell = null;
+                        hoveringID = null;
+                      }}
+                    >
+                      <div class="neighbor-container">
+                        <div
+                          style="flex-grow: 1;"
+                          on:click={() => dispatch("detail", neighbor.id)}
+                        >
+                          <p class="m-0"><strong>{neighbor.name}</strong></p>
+                          <p class="small m-0">{neighbor.id}</p>
+                        </div>
+                        <p
+                          class="small mb-0 mr-2"
+                          style="visibility: {hoveringID == neighbor.id
+                            ? 'visible'
+                            : 'hidden'}"
+                        >
+                          {neighbor.distance != null
+                            ? neighbor.distance.toFixed(3)
+                            : "--"}
+                        </p>
+                        <div
+                          style="visibility: {hoveringCell ==
+                            neighbor.uniqueID ||
+                          contextMenuCell == neighbor.uniqueID
+                            ? 'visible'
+                            : 'hidden'}; position: relative;"
+                        >
+                          <button
+                            class="btn btn-link m-0 p-1"
+                            on:click={() =>
+                              (contextMenuCell = neighbor.uniqueID)}
+                            on:blur={() => (contextMenuCell = null)}
+                            data-toggle="dropdown"
+                            ><Icon icon={faEllipsisV} /></button
+                          >
+                          <ul class="dropdown-menu" role="menu">
+                            <a
+                              class="dropdown-item"
+                              href="#"
+                              on:click|preventDefault={() =>
+                                dispatch("detail", neighbor.id)}>Inspect</a
+                            >
+                            <a
+                              class="dropdown-item"
+                              href="#"
+                              on:click|preventDefault={() =>
+                                dispatch("compare", {
+                                  firstID: entityID,
+                                  comparisonIDs: [neighbor.id],
+                                })}>Compare with "{info.name}"</a
+                            >
+                          </ul>
+                        </div>
+                      </div>
+                    </td>
+                  </tr>
+                {/each}
+              </tbody>
+            {/if}
+          </table>
+        </div>
+      {/each}
+    </div>
+  {/if}
+</div>
 
 <style>
   .entity-title {
@@ -199,155 +372,3 @@
     background-color: #eee;
   }
 </style>
-
-<div id="info_panel" class="container">
-  {#if isLoading || !entityID}
-    <div class="message-container">
-      {#if !entityID}
-        <div class="no-selection-message">
-          Search for a concept above or select one in the Browse view.
-        </div>
-      {:else}
-        <div class="spinner-border text-primary" role="status">
-          <span class="sr-only">Loading...</span>
-        </div>
-      {/if}
-    </div>
-  {:else if !!info}
-    <h2 class="entity-title pb-4">
-      {@html title}
-    </h2>
-    <div class="row pb-4">
-      <div class="col-md-5" id="termListPanel">
-        <h4>Concept Info</h4>
-        {#if !!info.definitions && info.definitions.length > 0}
-          <p class="mb-1"><em>Definitions:</em></p>
-          {#if showDefinitionExpandButton && definitionsExpanded}
-            <div class="definition-container">
-              {#each info.definitions as definition}
-                <p class="definition">
-                  {@html definition}
-                </p>
-              {/each}
-              <a
-                href="#"
-                on:click|preventDefault={() => (definitionsExpanded = false)}>Show
-                less</a>
-            </div>
-          {:else}
-            <p class="definition">
-              {@html definitionPreview}
-              {#if showDefinitionExpandButton}
-                <a
-                  href="#"
-                  on:click|preventDefault={() => (definitionsExpanded = true)}>Show
-                  more</a>
-              {/if}
-            </p>
-          {/if}
-        {/if}
-        <p class="mb-1"><em>Other terms:</em></p>
-        <ul>
-          {#each info.otherTerms as term}
-            <li>{term}</li>
-          {/each}
-        </ul>
-      </div>
-      <div class="col-md-7" id="confidencePanel">
-        <h4>Embedding Confidence</h4>
-        <FrameComparisonPlot
-          height={280}
-          data={confidenceData}
-          frameField="Date"
-          yField="Confidence"
-          {frameLabels} />
-      </div>
-    </div>
-
-    <h4 class="pb-2">Nearest Neighbors</h4>
-    <div class="tables_panel row">
-      {#each tables as table}
-        <div
-          class="{neighborColClass} nn_table"
-          class:low-confidence-table={table.isLowConfidence}>
-          <h5>{table.title}</h5>
-          <p>
-            Confidence:
-            {table.confidence.toFixed(3)}
-            {#if table.isLowConfidence}
-              <span class="warning-label"><Icon icon={faExclamationTriangle} />
-                Low</span>
-            {/if}
-          </p>
-          <table class="table table-hover">
-            {#if table.neighbors.length == 0}
-              <tbody>
-                <tr>
-                  <td class="no_data_cell" colspan="2" rowspan={numNeighbors}>
-                    No data
-                  </td>
-                </tr>
-              </tbody>
-            {:else}
-              <tbody>
-                {#each table.neighbors as neighbor}
-                  <tr>
-                    <td
-                      class:sympathetic-highlight={hoveringID == neighbor.id && hoveringCell != neighbor.uniqueID}
-                      on:mouseover={() => {
-                        hoveringCell = neighbor.uniqueID;
-                        hoveringID = neighbor.id;
-                      }}
-                      on:mouseleave={() => {
-                        hoveringCell = null;
-                        hoveringID = null;
-                      }}>
-                      <div class="neighbor-container">
-                        <div
-                          style="flex-grow: 1;"
-                          on:click={() => dispatch('detail', neighbor.id)}>
-                          <p class="m-0"><strong>{neighbor.name}</strong></p>
-                          <p class="small m-0">{neighbor.id}</p>
-                        </div>
-                        <p
-                          class="small mb-0 mr-2"
-                          style="visibility: {hoveringID == neighbor.id ? 'visible' : 'hidden'}">
-                          {neighbor.distance != null ? neighbor.distance.toFixed(3) : '--'}
-                        </p>
-                        <div
-                          style="visibility: {hoveringCell == neighbor.uniqueID || contextMenuCell == neighbor.uniqueID ? 'visible' : 'hidden'}; position: relative;">
-                          <button
-                            class="btn btn-link m-0 p-1"
-                            on:click={() => (contextMenuCell = neighbor.uniqueID)}
-                            on:blur={() => (contextMenuCell = null)}
-                            data-toggle="dropdown"><Icon
-                              icon={faEllipsisV} /></button>
-                          <ul class="dropdown-menu" role="menu">
-                            <a
-                              class="dropdown-item"
-                              href="#"
-                              on:click|preventDefault={() => dispatch('detail', neighbor.id)}>Inspect</a>
-                            <a
-                              class="dropdown-item"
-                              href="#"
-                              on:click|preventDefault={() => dispatch(
-                                  'compare',
-                                  {
-                                    firstID: entityID,
-                                    comparisonIDs: [neighbor.id],
-                                  }
-                                )}>Compare with "{info.name}"</a>
-                          </ul>
-                        </div>
-                      </div>
-                    </td>
-                  </tr>
-                {/each}
-              </tbody>
-            {/if}
-          </table>
-        </div>
-      {/each}
-    </div>
-  {/if}
-</div>

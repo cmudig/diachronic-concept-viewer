@@ -9,17 +9,33 @@
   export let selectedFrame = -1;
   export let previewFrame = -1;
 
+  let clickedIDs = [];
+
+  function updateThumbnailID(ids) {
+    if (ids.length == 1) selectedID = ids[0];
+    else selectedID = null;
+  }
+
+  let oldSelectedID = null;
+  $: if (oldSelectedID != selectedID) {
+    if (
+      selectedID != null &&
+      (clickedIDs.length < 1 || selectedID != clickedIDs[0])
+    )
+      clickedIDs = [selectedID];
+    oldSelectedID = selectedID;
+  }
+
   $: console.log("Selected ID:", selectedID);
 </script>
 
 <div class="row full-height">
   <div class="full-height col-md-8">
     <VisualizationPane
-      thumbnailID={selectedID}
-      currentFrame={selectedFrame}
+      bind:currentFrame={selectedFrame}
+      bind:clickedIDs
       bind:previewFrame
-      on:select={(e) => (selectedID = e.detail)}
-      on:changeframe={(e) => (selectedFrame = e.detail)}
+      on:select={(e) => updateThumbnailID(e.detail)}
     />
   </div>
   <div class="col-md-4 info-pane full-height">

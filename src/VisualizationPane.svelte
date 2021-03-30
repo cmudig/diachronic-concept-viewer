@@ -24,9 +24,7 @@
 
   let useHalos = false;
 
-  let oldThumbnailID = null;
-  export let thumbnailID = null;
-  let previewThumbnailID = null;
+  export let clickedIDs = [];
 
   var data = null;
   export let currentFrame = 0;
@@ -35,6 +33,12 @@
   let canvas;
 
   let showLegend = false;
+
+  let oldClickedIDs = [];
+  $: if (oldClickedIDs != clickedIDs) {
+    dispatch("select", clickedIDs);
+    oldClickedIDs = clickedIDs;
+  }
 
   // Note: it's very important that the callback doesn't READ any properties that
   // it also WRITES
@@ -57,56 +61,14 @@
     data = new Dataset(respJSON, colorChannel, 3);
   }
 
-  function updateThumbnailID(id) {
-    thumbnailID = id;
-    oldThumbnailID = thumbnailID;
-    dispatch("select", thumbnailID);
-  }
-
-  function updatePreviewThumbnailID() {
-    if (previewFrame == -1) {
-      previewThumbnailID = null;
-    } else if (
-      thumbnailID != null &&
-      data.atFrame(thumbnailID, previewFrame) != null
-    ) {
-      previewThumbnailID = thumbnailID;
-    } else {
-      previewThumbnailID = null;
-    }
-  }
-
-  function onScatterplotHover(e) {
-    // updateThumbnailID(e.detail != null ? e.detail : canvas.clickedID || null);
-  }
-
-  function onScatterplotClick(e) {
-    if (e.detail.length == 1 && e.detail[0] != thumbnailID)
-      updateThumbnailID(e.detail[0]);
-    else if (thumbnailID != null) updateThumbnailID(null);
-  }
-
   let oldFrame = 0;
   $: if (oldFrame != currentFrame) {
-    updateThumbnailID(thumbnailID);
     dispatch("changeframe", currentFrame);
     oldFrame = currentFrame;
   }
 
-  let oldPreviewFrame = -1;
-
-  $: if (oldPreviewFrame != previewFrame) {
-    updatePreviewThumbnailID();
-    oldPreviewFrame = previewFrame;
-  }
-
-  $: if (oldThumbnailID != thumbnailID) {
-    selectPoint(thumbnailID);
-    oldThumbnailID = thumbnailID;
-  }
-
   export function selectPoint(pointID) {
-    canvas.selectPoint(pointID);
+    clickedIDs = [pointID];
   }
 </script>
 
@@ -141,8 +103,7 @@
           animateTransitions
           bind:this={canvas}
           on:colorScale={(e) => (colorScale = e.detail)}
-          on:datahover={onScatterplotHover}
-          on:dataclick={onScatterplotClick}
+          bind:clickedIDs
         />
         {#if showLegend}
           <div

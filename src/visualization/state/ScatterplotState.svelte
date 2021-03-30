@@ -225,7 +225,17 @@
   let previousFrame = 0;
   $: if (!!marks && previousFrame != frame) {
     setFrame(previousFrame, frame, !thumbnail);
-    if (!thumbnail) updatePreviewLines();
+    if (!thumbnail) {
+      updatePreviewLines();
+      updateSelectionState(
+        hoveredID,
+        hoveredID,
+        selectedIDs,
+        selectedIDs,
+        alignedIDs,
+        alignedIDs
+      );
+    }
     previousFrame = frame;
   }
 
@@ -411,7 +421,9 @@
     newAlignedIDs
   ) {
     oldSelectedIDs.forEach((id) => selectionDecorationPool.hide(id));
-    newSelectedIDs.forEach((id) => selectionDecorationPool.show(id));
+    newSelectedIDs.forEach((id) => {
+      if (!!data.atFrame(id, frame)) selectionDecorationPool.show(id);
+    });
 
     updateAlignmentDecorations();
     updateStarGraphVisibility();
@@ -423,6 +435,7 @@
       selectedIDs
         .map((id) => {
           let item = data.atFrame(id, frame);
+          if (!item) return [];
           return [id, ...item.highlightIndexes];
         })
         .flat()
@@ -475,6 +488,7 @@
 
     starGraphPool = new AnimationPool({
       create: (nodeID, info) => {
+        if (!info) return null;
         let graph = new DecorationStarGraph(
           marks.getMarkByID(nodeID),
           info.linkedNodeIDs
@@ -638,10 +652,11 @@
       if (transientID == selected) transientID = null;
     }
     Object.keys(starGraphPool.getAll()).forEach((key) => {
-      if (!visibleGraphs.has(key)) starGraphPool.hide(key);
+      if (!visibleGraphs.has(key) || !data.atFrame(key, frame))
+        starGraphPool.hide(key);
     });
     visibleGraphs.forEach((key) => {
-      showStarGraph(key, key == transientID);
+      if (!!data.atFrame(key, frame)) showStarGraph(key, key == transientID);
     });
   }
 
