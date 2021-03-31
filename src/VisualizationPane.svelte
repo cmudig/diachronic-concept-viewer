@@ -101,6 +101,8 @@
           frame={currentFrame}
           {previewFrame}
           animateTransitions
+          allowAlignment={false}
+          allowCentering={true}
           bind:this={canvas}
           on:colorScale={(e) => (colorScale = e.detail)}
           bind:clickedIDs

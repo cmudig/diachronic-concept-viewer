@@ -18,6 +18,7 @@
   export let scalesNeutral = true;
 
   export let followingMarks = [];
+  export let centerOnFollowedPoints = false; // if true, center on the first value in followingMarks
 
   // Rescaling
 
@@ -36,7 +37,11 @@
 
   $: if (!!scales) {
     if (followingMarks.length > 0) {
-      scales.follow(followingMarks);
+      if (centerOnFollowedPoints && followingMarks.length >= 1) {
+        scales.centerOn(followingMarks[0], followingMarks.slice(1));
+      } else {
+        scales.follow(followingMarks);
+      }
       dispatch("update");
     } else {
       scales.unfollow();

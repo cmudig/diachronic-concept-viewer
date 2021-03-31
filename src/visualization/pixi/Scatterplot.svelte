@@ -32,6 +32,7 @@
   export let alignedIDs = [];
   export let filter = new Set();
   export let followingIDs = [];
+  export let centerOnSelection = false; // only applies with a single selected ID
 
   export let data = null;
 
@@ -392,9 +393,23 @@
   }
 
   $: {
-    followingMarks = followingIDs
-      .map((id) => marks.getMarkByID(id))
-      .filter((m) => !!m);
+    if (
+      centerOnSelection &&
+      clickedIDs.length == 1 &&
+      !!data.atFrame(clickedIDs[0], frame)
+    ) {
+      followingMarks = [
+        clickedIDs[0],
+        ...data.atFrame(clickedIDs[0], frame).highlightIndexes,
+      ]
+        .filter((id) => !!data.atFrame(id, frame))
+        .map((id) => marks.getMarkByID(id))
+        .filter((m) => !!m);
+    } else {
+      followingMarks = followingIDs
+        .map((id) => marks.getMarkByID(id))
+        .filter((m) => !!m);
+    }
   }
 </script>
 
@@ -431,6 +446,7 @@
     yExtent={!!data ? data.getYExtent() : null}
     {padding}
     {followingMarks}
+    centerOnFollowedPoints={centerOnSelection}
     on:update={rescale}
   />
 </div>

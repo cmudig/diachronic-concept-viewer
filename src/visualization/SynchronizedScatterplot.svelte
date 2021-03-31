@@ -45,6 +45,8 @@
   // Data control
   export let data = null;
   export let alignFunction = null;
+  export let allowAlignment = true; // if true, show Align button
+  export let allowCentering = false; // if true, show Center button
 
   // Thumbnails
   export let thumbnailsURL = null;
@@ -92,6 +94,7 @@
   }
 
   function updateSelection() {
+    isCentered = false;
     if (clickedIDs.length > 0) {
       let filteredPoints = new Set();
       clickedIDs.forEach((clickedID) => {
@@ -126,7 +129,6 @@
     !scalesNeutral || clickedIDs.length > 0 || alignedIDs.length > 0;
 
   // Align button
-  export let allowAlignment = true;
   let showAlignmentButton = false;
   $: showAlignmentButton = allowAlignment && clickedIDs.length > 0;
 
@@ -140,7 +142,8 @@
   $: alignmentText = getAlignmentText(
     alignedIDs,
     clickedIDs,
-    alignedToSelection
+    alignedToSelection,
+    isCentered
   );
 
   function _describePoint(pointID) {
@@ -156,10 +159,17 @@
     return pointIDs.length > 1 ? ` and ${pointIDs.length - 1} others` : "";
   }
 
-  function getAlignmentText(alignPoints, clickPoints, alignedToSelectedPoints) {
+  function getAlignmentText(
+    alignPoints,
+    clickPoints,
+    alignedToSelectedPoints,
+    centered
+  ) {
     if ((alignPoints.length == 0 && clickPoints.length == 0) || thumbnail) {
       return "";
     }
+
+    let selectionWord = centered ? "centered" : "selected";
 
     if (clickPoints.length == 0 && alignPoints.length > 0) {
       return `Aligned to <strong>${_describePoint(
@@ -168,14 +178,14 @@
     } else if (clickPoints.length > 0 && alignPoints.length == 0) {
       return `<strong>${_describePoint(
         clickPoints[0]
-      )}</strong>${_othersMessage(clickPoints)} selected`;
+      )}</strong>${_othersMessage(clickPoints)} ${selectionWord}`;
     }
 
     let selectionBase =
       `<strong>${_describePoint(clickPoints[0])}</strong>` +
-      `${_othersMessage(clickPoints)} selected`;
-    if (alignedToSelectedPoints) return selectionBase + " (aligned)";
+      `${_othersMessage(clickPoints)} ${selectionWord}`;
 
+    if (alignedToSelectedPoints) return selectionBase + " (aligned)";
     return (
       selectionBase +
       `, aligned to ${alignPoints.length} ` +
@@ -194,10 +204,18 @@
     }
   }
 
+  // Centering button
+  let showCenterButton = false;
+  let isCentered = false;
+  let centerButtonEnabled = false;
+  $: showCenterButton = allowCentering && clickedIDs.length > 0;
+  $: centerButtonEnabled = allowCentering && clickedIDs.length == 1;
+
   export function reset() {
     clickedIDs = [];
     alignedIDs = [];
     followingIDs = [];
+    isCentered = false;
     scatterplot.reset();
   }
 
@@ -244,6 +262,7 @@
     {colorScheme}
     {animateTransitions}
     {thumbnailsURL}
+    centerOnSelection={isCentered}
     bind:frame
     bind:previewFrame
     bind:previewProgress
@@ -275,6 +294,16 @@
         >
           Align</button
         >
+      {/if}
+      {#if showCenterButton}
+        <button
+          disabled={!centerButtonEnabled}
+          type="button"
+          class="btn btn-primary btn-sm"
+          on:click|preventDefault={() => (isCentered = !isCentered)}
+        >
+          {#if isCentered}Vicinity{:else}Center{/if}
+        </button>
       {/if}
       {#if showResetButton}
         <button
