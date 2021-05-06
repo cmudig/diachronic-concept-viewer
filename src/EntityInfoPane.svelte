@@ -223,9 +223,21 @@
                     <div class="neighbor-container">
                       <div style="flex-grow: 1;" class={neighborSet[0].class}>
                         <p class="m-0">
-                          <strong>{neighborSet[0].name}</strong>
+                          <strong>
+                              {#if !neighborSet[0].name || neighborSet[0].name == null}
+                                  {neighborSet[0].id}
+                              {:else}
+                                  {neighborSet[0].name} FOOBAR
+                              {/if}
+                          </strong>
                         </p>
-                        <p class="small m-0">{neighborSet[0].id}</p>
+                        <p class="small m-0">
+                            {#if !neighborSet[0].name || neighborSet[0].name == null}
+                                &nbsp;
+                            {:else}
+                                {neighborSet[0].id}
+                            {/if}
+                        </p>
                       </div>
                       {#if hoveringNeighborID == neighborSet[0].id}
                         <p class="small mb-0 mr-2">Click to view</p>

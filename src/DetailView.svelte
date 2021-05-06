@@ -157,11 +157,15 @@
           {/if}
         {/if}
         <p class="mb-1"><em>Other terms:</em></p>
-        <ul>
-          {#each info.otherTerms as term}
-            <li>{term}</li>
-          {/each}
-        </ul>
+        {#if info.otherTerms && info.otherTerms.length > 0}
+            <ul>
+              {#each info.otherTerms as term}
+                <li>{term}</li>
+              {/each}
+            </ul>
+        {:else}
+            <i>&nbsp;&nbsp; None &nbsp;&nbsp;</i>
+        {/if}
       </div>
       <div class="col-md-7" id="confidencePanel">
         <h4>Embedding Confidence</h4>
@@ -223,8 +227,20 @@
                           style="flex-grow: 1;"
                           on:click={() => dispatch("detail", neighbor.id)}
                         >
-                          <p class="m-0"><strong>{neighbor.name}</strong></p>
-                          <p class="small m-0">{neighbor.id}</p>
+                          <p class="m-0"><strong>
+                            {#if !neighbor.name || neighbor.name == null}
+                              {neighbor.id}
+                            {:else}
+                              {neighbor.name}
+                            {/if}
+                          </strong></p>
+                          <p class="small m-0">
+                            {#if !neighbor.name || neighbor.name == null}
+                              &nbsp;
+                            {:else}
+                              {neighbor.id}
+                            {/if}
+                          </p>
                         </div>
                         <p
                           class="small mb-0 mr-2"

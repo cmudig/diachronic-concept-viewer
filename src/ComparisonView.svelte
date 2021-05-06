@@ -398,9 +398,21 @@
                               dispatch("detail", column.neighbors[i].id)}
                           >
                             <p class="m-0">
-                              <strong>{column.neighbors[i].name}</strong>
+                              <strong>
+                                {#if !column.neighbors[i].name || column.neighbors[i].name == null}
+                                  {column.neighbors[i].id}
+                                {:else}
+                                  {column.neighbors[i].name}
+                                {/if}
+                              </strong>
                             </p>
-                            <p class="small m-0">{column.neighbors[i].id}</p>
+                            <p class="small m-0">
+                              {#if !column.neighbors[i].name || column.neighbors[i].name == null}
+                                &nbsp;
+                              {:else}
+                                {column.neighbors[i].id}
+                              {/if}
+                            </p>
                           </div>
                           <p
                             class="small mb-0 mr-2"
