@@ -43,8 +43,8 @@
       let searchTerm = autocompleteText.toLocaleLowerCase();
       visibleOptions = options.filter(
         (item) =>
-          item.text.toLocaleLowerCase().includes(searchTerm) ||
-          item.value.toLocaleLowerCase().includes(searchTerm)
+          (item.text || "").toLocaleLowerCase().includes(searchTerm) ||
+          (item.value || "").toLocaleLowerCase().includes(searchTerm)
       );
       if (visibleOptions.length > numResults)
         visibleOptions = visibleOptions.slice(0, numResults);
@@ -68,10 +68,43 @@
 
   function styleText(option) {
     let text = option.text;
+    if (!text) return option.value;
     if (text.length > maxLength) text = text.substr(0, maxLength) + "...";
     return `${option.value} <strong>${text}</strong>`;
   }
 </script>
+
+<div class="autocomplete-container">
+  <input
+    type="search"
+    autocorrect="off"
+    class="form-control mb-0 dropdown-toggle"
+    {placeholder}
+    {disabled}
+    data-toggle="dropdown"
+    bind:this={autocomplete}
+    bind:value={autocompleteText}
+  />
+  <ul
+    class="dropdown-menu"
+    class:dropdown-menu-right={right}
+    bind:this={autocompleteDropdown}
+    style={visibleOptions.length > 0
+      ? "visibility: visible;"
+      : "visibility: hidden;"}
+    role="menu"
+  >
+    {#each visibleOptions as option}
+      <a
+        href="#"
+        class="dropdown-item"
+        on:click|preventDefault={() => onPointSelectorItemClick(option.value)}
+      >
+        {@html styleText(option)}
+      </a>
+    {/each}
+  </ul>
+</div>
 
 <style>
   .dropdown-item:hover {
@@ -104,30 +137,3 @@
     color: #555;
   }
 </style>
-
-<div class="autocomplete-container">
-  <input
-    type="search"
-    autocorrect="off"
-    class="form-control mb-0 dropdown-toggle"
-    {placeholder}
-    {disabled}
-    data-toggle="dropdown"
-    bind:this={autocomplete}
-    bind:value={autocompleteText} />
-  <ul
-    class="dropdown-menu"
-    class:dropdown-menu-right={right}
-    bind:this={autocompleteDropdown}
-    style={visibleOptions.length > 0 ? 'visibility: visible;' : 'visibility: hidden;'}
-    role="menu">
-    {#each visibleOptions as option}
-      <a
-        href="#"
-        class="dropdown-item"
-        on:click|preventDefault={() => onPointSelectorItemClick(option.value)}>
-        {@html styleText(option)}
-      </a>
-    {/each}
-  </ul>
-</div>

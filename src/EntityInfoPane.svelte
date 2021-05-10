@@ -101,6 +101,110 @@
   let hoveringNeighborID = null;
 </script>
 
+<div class="info-pane-container">
+  {#if entityID == null || isLoading}
+    <div class="message-container">
+      {#if !entityID}
+        <p class="no-selection-message">
+          Select a concept from the plot or search for one above.
+        </p>
+      {:else}
+        <div class="spinner-border text-primary" role="status">
+          <span class="sr-only">Loading...</span>
+        </div>
+      {/if}
+    </div>
+  {:else}
+    <div class="selection-info-container">
+      <div class="selection-header">
+        <h4 style="flex-grow: 1; font-weight: 200;">
+          {@html title}
+        </h4>
+        <button
+          class="btn btn-dark btn-sm mr-1"
+          on:click={() => dispatch("detail", entityID)}>Inspect</button
+        >
+        <button class="btn btn-dark btn-sm" on:click={() => dispatch("compare")}
+          >Compare...</button
+        >
+      </div>
+      {@html description}
+      {#if !!info && !!info.neighbors[frame]}
+        <table class="table">
+          <thead>
+            {#if neighborInfo.length > 0 && neighborInfo[0].length > 1}
+              <th>Current</th>
+              <th>Destination</th>
+            {:else}
+              <th>Neighbors</th>
+            {/if}
+          </thead>
+          <tbody>
+            {#each neighborInfo as neighborSet}
+              <tr>
+                {#if !!neighborSet[0]}
+                  <td
+                    on:click={() => selectEntity(neighborSet[0].id)}
+                    on:mouseover={(e) =>
+                      (hoveringNeighborID = neighborSet[0].id)}
+                    on:mouseleave={(e) => (hoveringNeighborID = null)}
+                  >
+                    <div class="neighbor-container">
+                      <div style="flex-grow: 1;" class={neighborSet[0].class}>
+                        <p class="m-0">
+                          <strong>
+                            {#if !neighborSet[0].name || neighborSet[0].name == null}
+                              {neighborSet[0].id}
+                            {:else}
+                              {neighborSet[0].name}
+                            {/if}
+                          </strong>
+                        </p>
+                        <p class="small m-0">
+                          {#if !neighborSet[0].name || neighborSet[0].name == null}
+                            &nbsp;
+                          {:else}
+                            {neighborSet[0].id}
+                          {/if}
+                        </p>
+                      </div>
+                      {#if hoveringNeighborID == neighborSet[0].id}
+                        <p class="small mb-0 mr-2">Click to view</p>
+                        <button
+                          class="btn btn-dark btn-sm my-0 ml-2"
+                          on:click|stopPropagation={(e) =>
+                            dispatch("detail", neighborSet[0].id)}
+                          >Inspect</button
+                        >
+                        <button
+                          class="btn btn-dark btn-sm my-0 mx-2"
+                          on:click|stopPropagation={(e) =>
+                            dispatch("compare", neighborSet[0].id)}
+                          >Compare</button
+                        >
+                      {/if}
+                    </div>
+                  </td>
+                {:else}
+                  <td>&mdash;</td>
+                {/if}
+                {#if !!neighborSet[1]}
+                  <td>
+                    <div class={neighborSet[1].class}>
+                      <p class="m-0"><strong>{neighborSet[1].name}</strong></p>
+                      <p class="small m-0">{neighborSet[1].id}</p>
+                    </div>
+                  </td>
+                {/if}
+              </tr>
+            {/each}
+          </tbody>
+        </table>
+      {/if}
+    </div>
+  {/if}
+</div>
+
 <style>
   .message-container {
     display: flex;
@@ -174,98 +278,3 @@
     margin-right: auto;
   }
 </style>
-
-<div class="info-pane-container">
-  {#if entityID == null || isLoading}
-    <div class="message-container">
-      {#if !entityID}
-        <p class="no-selection-message">
-          Select a concept from the plot or search for one above.
-        </p>
-      {:else}
-        <div class="spinner-border text-primary" role="status">
-          <span class="sr-only">Loading...</span>
-        </div>
-      {/if}
-    </div>
-  {:else}
-    <div class="selection-info-container">
-      <div class="selection-header">
-        <h4 style="flex-grow: 1; font-weight: 200;">
-          {@html title}
-        </h4>
-        <button
-          class="btn btn-dark btn-sm mr-1"
-          on:click={() => dispatch('detail', entityID)}>Inspect</button>
-        <button
-          class="btn btn-dark btn-sm"
-          on:click={() => dispatch('compare')}>Compare...</button>
-      </div>
-      {@html description}
-      {#if !!info && !!info.neighbors[frame]}
-        <table class="table">
-          <thead>
-            {#if neighborInfo.length > 0 && neighborInfo[0].length > 1}
-              <th>Current</th>
-              <th>Destination</th>
-            {:else}
-              <th>Neighbors</th>
-            {/if}
-          </thead>
-          <tbody>
-            {#each neighborInfo as neighborSet}
-              <tr>
-                {#if !!neighborSet[0]}
-                  <td
-                    on:click={() => selectEntity(neighborSet[0].id)}
-                    on:mouseover={(e) => (hoveringNeighborID = neighborSet[0].id)}
-                    on:mouseleave={(e) => (hoveringNeighborID = null)}>
-                    <div class="neighbor-container">
-                      <div style="flex-grow: 1;" class={neighborSet[0].class}>
-                        <p class="m-0">
-                          <strong>
-                              {#if !neighborSet[0].name || neighborSet[0].name == null}
-                                  {neighborSet[0].id}
-                              {:else}
-                                  {neighborSet[0].name} FOOBAR
-                              {/if}
-                          </strong>
-                        </p>
-                        <p class="small m-0">
-                            {#if !neighborSet[0].name || neighborSet[0].name == null}
-                                &nbsp;
-                            {:else}
-                                {neighborSet[0].id}
-                            {/if}
-                        </p>
-                      </div>
-                      {#if hoveringNeighborID == neighborSet[0].id}
-                        <p class="small mb-0 mr-2">Click to view</p>
-                        <button
-                          class="btn btn-dark btn-sm my-0 ml-2"
-                          on:click|stopPropagation={(e) => dispatch('detail', neighborSet[0].id)}>Inspect</button>
-                        <button
-                          class="btn btn-dark btn-sm my-0 mx-2"
-                          on:click|stopPropagation={(e) => dispatch('compare', neighborSet[0].id)}>Compare</button>
-                      {/if}
-                    </div>
-                  </td>
-                {:else}
-                  <td>&mdash;</td>
-                {/if}
-                {#if !!neighborSet[1]}
-                  <td>
-                    <div class={neighborSet[1].class}>
-                      <p class="m-0"><strong>{neighborSet[1].name}</strong></p>
-                      <p class="small m-0">{neighborSet[1].id}</p>
-                    </div>
-                  </td>
-                {/if}
-              </tr>
-            {/each}
-          </tbody>
-        </table>
-      {/if}
-    </div>
-  {/if}
-</div>
